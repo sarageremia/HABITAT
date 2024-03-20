@@ -1,0 +1,556 @@
+---
+title: "Statistics with R"
+author: "Sara Geremia"
+date: "2024-03-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Course Content
+
+- Fundamentals of R programming language
+- Reports with R Markdown
+- Visualization and summary statistics with R
+- Hypothesis testing with R
+- Regression with R
+
+### *Where can I find the material?*
+
+[https://github.com/sarageremia/HABITAT](https://github.com/sarageremia/HABITAT)
+
+### *Textbooks*
+
+- Wood, S.N. (2016). [Core Statistics](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.maths.ed.ac.uk/~swood34/core-statistics.pdf).
+- Long, J., & Teetor, P. (2019). [R Cookbook, 2nd Edition] (https://rc2e.com/).    
+- Xie, Y., J.J. Allaire & G. Grolemund. (2023). [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/)
+
+
+# R Software
+
+**R** is a free software environment for statistical analysis and graphics.    
+It is open source and includes a wide set of tools for data analysis.
+
+Installing Base-R:
+
+- Windows [cran.r-project.org/bin/windows/base/](cran.r-project.org/bin/windows/base/)   
+- Mac [cran.r-project.org/bin/macosx/](cran.r-project.org/bin/macosx/)   
+- Linux [cran.r-project.org/bin/linux/](cran.r-project.org/bin/linux/)
+
+# RStudio Software
+
+**RStudio** is a open source integrated development environment for R.
+
+- [www.rstudio.com/products/rstudio/download/](www.rstudio.com/products/rstudio/download/)
+
+### *The Four RStudio Panes*
+
+### **Console** 
+
+The R console is where you can directly interact with the R programming language.
+
+When you open R, you'll typically see a prompt like this:
+
+`>`
+
+This is where you can start typing R commands.
+
+*Useful keyboard keys*:
+
+- "#" for comments
+- Tab for completion
+- up arrow to visualize the last command
+
+You can use the R console as a calculator:
+
+```{r}
+# Simple Arithmetic
+1 + 2
+10 / 2
+
+# Logarithm
+log(9, base = 3)
+
+# Integer Division
+119 %/% 13 
+
+# Modulo (remainder of the division)
+119 %% 13
+
+```
+
+Exercise 1:
+
+1) Verify that 7+3−5×2 and (7+3)−(5×2) are equivalent.
+
+2) Use a suitable logical operation to find out whether 574 is a multiple of 7.
+
+3) use the function floor on the scalar constant 7.0259. What do you obtain? How do the output differs from `ceiling(7.0259)`?
+
+4) Use the R function `round()` to control the number of decimal places in 7.0259 (Hint: use the `help()` function)
+
+### **Source**
+
+The R source panel, also known as the script editor or script window, is where you can write, edit, and save your R code in a file. It provides a more convenient way to work with larger chunks of code compared to the R console. 
+
+To open the source panel, you can typically find an option like:
+
+"File" > "New File" > "R Script"
+
+or use a shortcut (Ctrl + Shift + N).
+
+### **Environment / History**  
+
+The **History** panel shows a list of commands you've executed. This is helpful for recalling previous commands.
+
+The **Environment** panel shows you the current objects (variables, functions, data frames) in your workspace.
+You can create objects in the Console or Source panel, and they will appear in the Environment panel.
+
+Creating objects in R is fundamental to working with data and performing analyses. Objects in R are containers that hold data. There are several types of objects, including vectors, matrices, data frames and lists.
+
+Here's how you can define a numeric vector:
+
+```{r}
+# Using c() function (combine)
+numeric_vector <- c(1, 2, 3, 4, 5)
+numeric_vector
+```
+
+You can define it also by creating a sequence of numbers:
+
+```{r}
+# Using a colon
+numeric_vector <- 1:5
+numeric_vector
+
+# You might think that 1:n+1 is the sequence of numbers 1, 2, …, n, n+1. It’s not!
+n <- 4
+1:n+1
+1:(n+1)
+
+# Using seq() function (sequence)
+seq_vector <- seq(1, 10, by = 2)
+seq_vector
+
+# Using rep() function (repeat)
+rep_vector <- rep(0, times = 5)
+rep_vector
+```
+
+The vector is held in your workspace, you can click on objects in the Environment panel to view their contents.
+The `rm` function removes, permanently, one or more objects from the workspace:
+
+```{r}
+rm(rep_vector)
+```
+
+You can import data into R using the Environment panel, by clicking on 'Import Dataset'
+and choosing a file (e.g., Excel) to import. The imported data will appear in the Environment panel.
+
+### **Files / Plots / Packages / Help**
+
+You can import data into R using also the **Files** panel, by choosing the data file to import in your working directory and clicking on it, followed by 'Import Dataset'.
+
+When you create plots in R, they will appear in the **Plots** panel.
+
+```{r}
+x <- 1:10
+y <- x^2
+
+plot(x, y)
+```
+
+The **Packages** panel allows you to manage R packages. You can install R packages 
+clicking on "Install" and typing the name of the package (e.g., "ggplot2")
+
+The **Help** panel provides access to documentation and help for R functions and packages.
+You can type the function or package name in the search bar or
+
+```{r}
+# use the help() function
+help(sqrt)
+
+# use the question mark
+?sqrt
+
+```
+
+or select the text of the function and use a shortcut (F1).
+
+# Vectors
+
+```{r echo=FALSE}
+knitr::include_graphics("img/data-structures-overview.png")
+```
+
+
+### **Logical vectors**
+
+Logical vectors are the simplest type of atomic vector because they can take only three possible values: FALSE, TRUE, and NA. You can also create them by hand with `c()`.
+
+```{r}
+# Logical vector
+logical_vals <- c(TRUE, FALSE, TRUE, TRUE, FALSE)
+logical_vals
+
+```
+
+The comparison operators (==, !=, <, >, <=, >=) can perform an element-by-element comparison of two vectors. They can also compare a vector’s element against a scalar. The result is a vector of logical values in which each value is the result of one element-wise comparison. Logical vectors are usually constructed with comparison operators. 
+
+```{r}
+1:10 %% 3 == 0
+
+x <- sample(1:20, 10, replace = TRUE)
+x
+x > 10
+```
+
+### **Numeric vectors**
+
+```{r}
+numbers <- c(1, 2, 3, 4, 5)
+numbers
+
+typeof(numbers)
+typeof(as.integer(numbers))
+```
+
+Integers have one special value: NA, while doubles have four: `NA`, `NaN`, `Inf` and `-Inf`. All three special values `NaN`, `Inf` and `-Inf` can arise during division:
+
+```{r}
+c(-1, 0, 1) / 0
+```
+
+To check for these special values use the helper functions is.na(), is.finite(), is.infinite(), and is.nan()
+
+```{r}
+is.nan(c(-1, 0, 1) / 0)
+```
+
+### **Character vectors**
+
+Each element of a character vector is a string, and a string can contain an arbitrary amount of data.
+
+```{r}
+# Character vector
+names <- c("John", "Jane", "Doe", "Mike", "Alice")
+names
+
+```
+
+### **Factors**
+
+In R, a factor is a categorical variable that can take on a limited number of distinct categories or levels. Factors are useful for representing categorical data in statistical modeling and data analysis. When you create a factor in R, it not only stores the values but also the corresponding levels or categories that the variable can take. This is particularly helpful when working with data that has predefined categories such as "Yes" or "No", "Low", "Medium", "High", etc.
+
+You can create a factor in R using the factor() function. 
+
+```{r}
+# Creating a factor
+weather <- factor(c("Sunny", "Rainy", "Cloudy", "Sunny", "Rainy"))
+
+weather
+```
+
+When you create a factor, R automatically assigns levels to the categories based on the order in which they appear. You can also specify the levels explicitly.
+
+# Using vectors
+ 
+Sometimes you want to do different things based on the type of vector. One option is to use `typeof()`. Another is to use a test function which returns a `TRUE` or `FALSE`. 
+
+```{r echo=FALSE}
+knitr::include_graphics("img/test-functions.png")
+```
+
+There are two ways to convert, or coerce, one type of vector to another:
+
+- Explicit coercion happens when you call a function like `as.logical()`, `as.integer()`, `as.double()`, or `as.character()`. 
+
+- Implicit coercion happens when you use a vector in a specific context that expects a certain type of vector. For example, when you use a logical vector with a numeric summary function, or when you use a double vector where an integer vector is expected.
+
+```{r}
+x <- sample(1:20, 100, replace = TRUE)
+x
+
+y <- x > 10 
+y
+
+# How many are greater than 10?
+sum(y)
+```
+
+
+**Indexing vectors** in R allows you to access specific elements or subsets of a vector. There are different methods for indexing vectors, including single-element indexing, multi-element indexing, and conditional indexing. Let's explore these methods with practical examples:
+
+To access a single element of a vector, you use square brackets `[ ]` with the index of the element you want to retrieve. Indexing in R starts from 1.
+
+```{r}
+# Create a numeric vector
+numbers <- c(10, 20, 30, 40, 50)
+
+# Access the third element of the vector (30)
+numbers[3]
+```
+
+You can use a vector of indices to access multiple elements at once.
+
+```{r}
+# Access multiple elements
+numbers[c(1, 3, 5)]
+
+```
+
+You can use logical vectors to index elements based on conditions. This is powerful for filtering data.
+
+```{r}
+# Create a logical vector
+logical_vector <- c(TRUE, FALSE, TRUE, FALSE, TRUE)
+
+# Use the logical vector to index the 'numbers' vector
+numbers[logical_vector]
+
+```
+
+You can also use indexing to modify elements in a vector.
+
+```{r}
+# Modify the second element of 'numbers' to 25
+numbers[2] <- 25
+numbers
+```
+
+Using negative indices removes elements from the vector.
+
+```{r}
+# Remove the third element
+numbers <- numbers[-3]
+numbers
+```
+
+You can assign names to elements in a vector and then use these names for indexing.
+
+```{r}
+# Create a vector with named elements
+grades <- c(math = 90, science = 85, history = 88)
+
+# Access the grade for "science"
+grades["science"]
+```
+
+
+**Performing Vector Arithmetic** in R involves performing element-wise operations on entire vectors. Many functions operate on entire vectors, too, and return a vector result.
+
+```{r}
+x <- c(11, 12, 13, 14, 15)
+
+x + 2
+x / 2
+
+y <- c(1, 2, 3, 4, 5)
+
+x + y
+x / y
+
+sqrt(x)
+log(y)
+```
+
+
+Exercise 2:
+
+1) Define the vector y with elements 8, 3, 5, 7, 6, 6, 8, 9, 2. Are the elements of y less than 5? Create a new vector z with the elements of y that are less than 5.
+
+2) Provide an example where logical false (FALSE) is coerced to numeric 0 and logical true (TRUE) is coerced to numeric 1.
+
+3) What does this code do?
+
+```{r}
+x <- sample(10) < 4
+x
+which(x)
+```
+
+4) Use the modulo operator to count the number of odd integers in (1,2,3,7,9).
+
+5) Create a vector x of length 4. What does the code return?
+
+```{r}
+x[c(TRUE, TRUE, NA, FALSE)]
+```
+
+6) Define a vector x with elements 5, 12, 13, 12. Coerce this vector to factor and inspect its structure. How are levels defined?
+
+7) Create a factor from the sequence of strings “1”, “1”, “0”, “1”, “1”, “0”. What do length() and mode() return?
+
+8) Convert the factor variable of the previous point to a factor with levels “m” and “f”. What does the call to table() produce?
+
+# Matrices 
+
+In R, a matrix is just a vector that has dimensions. 
+It may seem strange at first, but you can transform a vector into a matrix simply by giving it dimensions.
+
+```{r}
+A <- 1:6
+dim(A)
+A
+
+dim(A) <- c(2, 3)
+A
+```
+
+Or using the `matrix` function
+
+```{r}
+matrix(A, nrow = 2, ncol = 3)
+```
+
+*Indexing matrices** in R allows you to access specific elements, rows, columns or subsets of a matrix.
+
+```{r}
+# Access the first element of the matrix
+A[1, 1]
+
+# Access the first row of the matrix 
+A[1, ]
+
+# Access the first 2 columns of the matrix 
+A[, 1:2]
+```
+
+# Lists
+
+n R, a list is a versatile data structure that can hold elements of different data types. Unlike vectors and matrices, which can only hold elements of the same type, lists can store a mix of numeric, character, logical, or even other lists. This flexibility makes lists powerful for organizing and managing heterogeneous data.
+
+You can create a list in R using the list() function:
+
+```{r}
+# Creating a list
+my_list <- list(name = "John", age = 30, is_student = TRUE)
+```
+
+Each element in a list can have a name or identifier associated with it.
+You can access elements of a list using the `$` operator for named elements or using square brackets `[]` with the index.
+
+We can access single elements using the `$` operator or double-square-bracket syntax and sublists using the single-square-bracket syntax.
+
+```{r}
+# Accessing elements by name
+my_list$name
+my_list$age
+
+# Accessing elements by index
+my_list[1]
+my_list[[1]]
+
+class(my_list[1])
+class(my_list[[1]])
+
+```
+
+You can add new elements to a list using the same indexing notation.
+
+```{r}
+my_list[["city"]] <- "New York"
+my_list
+```
+
+To remove a list element, select it by position or by name, and then assign NULL to the selected element:
+
+```{r}
+my_list$city <- NULL
+```
+
+
+Lists can contain other lists as elements, creating a nested structure.
+
+```{r}
+# Creating a nested list
+nested_list <- list(
+  name = "Alice",
+  details = list(age = 25, city = "San Francisco", is_student = FALSE)
+)
+
+# Accessing elements of the nested list
+nested_list$name
+nested_list$details$age
+
+nested_list[[2]][[1]]
+nested_list[[2]][1:2]
+```
+
+# Data Frames
+
+A data frame is intended to mimic a dataset. A data frame is a tabular (rectangular) data structure, which means that it has rows and columns.  It is not implemented by a matrix, however. Rather, a data frame is a list with the following characteristics:
+
+- The elements of the list are vectors and/or factors.   
+- vectors and factors are the columns of the data frame.   
+-  vectors and factors must all have the same length; in other words, all columns must have the same height.   
+- The equal-height columns give a rectangular shape to the data frame.    
+- The columns must have names.
+
+If your data is captured in several vectors and/or factors, use the data.frame function to assemble them into a data frame:
+
+```{r}
+df <- data.frame(names, numeric_vector, logical_vals, weather)
+df
+```
+Notice that data.frame takes the column names from your program variables. You can override that default by supplying explicit column names:
+
+```{r}
+df <- data.frame(name = names, id = numeric_vector, gender = logical_vals, weather = weather)
+df
+```
+R provides two different paradigms for accessing data frame contents:
+
+- You can use list operators to extract columns from a data frame, such as `df[i]`, `df[[i]]`, or `df$name`.   
+
+```{r}
+df[1]
+
+df[[1]]
+df$name
+```
+
+- You can use matrix-like notation, such as df[i,j], df[i,], or df[,j].
+
+```{r}
+df[1, 1]
+df[1, ]
+df[, 1]
+```
+
+
+
+If your data is organized by rows, and you want to assemble it into a data frame, use the `rbind` function.
+
+
+
+`rbind(row1, row2, . . . , rowN)`
+
+All statistical work begins with data, mainly with data matrices, and most data is stuck inside files and databases. Dealing with input is probably the first step of implementing any significant statistical project.
+
+When you open a file in R, you give the filename as a character string. 
+If you want to read a text file that contains a table of whitespace-delimited data, use the `read_table2` function from the `readr` package.
+
+```{r eval=FALSE}
+library(tidyverse)
+
+tab1 <- read_table2("./data/datafile.txt")
+```
+
+Notice that when the filename contains backslashes (\) R cannot open the file.
+You can solve this problem by changing the backslashes to forward slashes `/` or double the backslashes.
+
+The `read_csv` function from the `readr` package is a fast way to read CSV files. If your CSV file has a header line, use this:
+
+```{r eval=FALSE}
+tbl <- read_csv("datafile.csv")
+```
+
+If not, use this:
+
+```{r eval=FALSE}
+tbl <- read_csv("datafile.csv",  col_names = FALSE)
+```
+

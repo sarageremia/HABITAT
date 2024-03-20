@@ -1,0 +1,146 @@
+---
+title: "Frequency Distributions and Visualization with R"
+author: "Sara Geremia"
+date: "2024-03-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+Load data
+
+```{r}
+load("practice/01-Descriptive/data/milan_egypop.RData")
+```
+
+```{r}
+head(milan_egypop)
+tail(milan_egypop)
+```
+The `str` function compactly display the internal structure of an R object, in this case a data frame.
+
+```{r}
+str(milan_egypop)
+```
+
+
+```{r}
+names(milan_egypop) <- c("year", "id_nil", "nil", "age", "gender", "nat", "inhab")
+```
+
+
+If you want to count the relative frequency of certain observations in your sample, you can identify the interesting observations by using a logical expression; then calculate the fraction of observations it identifies.
+
+### Example: Relative frequency distribution of Egyptians by gender in Milan in 2023
+
+- **Base-R**
+
+Compute the relative frequency of males and females in 2023
+
+```{r}
+# filter by gender and year
+egypop23m <- milan_egypop[milan_egypop$gender == "Maschi" & milan_egypop$year == 2023, ]
+
+# total number of inhabitants in 2023
+N_egypop23 <- sum(milan_egypop$inhab[milan_egypop$year == 2023])
+
+# absolute frequency of males in 2023
+n_egypop23m <- sum(egypop23m$inhab)
+# relative frequency of males in 2023
+f_egypop23m <- n_egypop23m / N_egypop23
+f_egypop23m
+
+
+# relative frequency of females in 2023
+1 - f_egypop23m
+
+egypop23f <- milan_egypop[milan_egypop$gender == "Femmine" & milan_egypop$year == 2023, ]
+
+n_egypop23f <- sum(egypop23f$inhab)
+f_egypop23f <- n_egypop23f / N_egypop23
+f_egypop23f
+```
+
+Visualize the frequency distribution
+
+```{r}
+egypop23_gender <- c(rep("Maschi", n_egypop23m), rep("Femmine",  n_egypop23f))
+
+table(egypop23_gender)
+pie(table(egypop23_gender))
+
+```
+
+- **Tidyverse**
+
+Compute the relative frequency of males and females in 2023
+
+```{r}
+egypop23_gender <- milan_egypop %>% 
+  # filter by year
+  filter(year == 2023) %>%
+  # total number of inhabitants in 2023
+  mutate(N = sum(inhab)) %>% 
+  # perform operations by gender (separately on males and females)
+  group_by(gender) %>% 
+  # absolute and relative frequency by gender
+  mutate(n = sum(inhab),
+         f = n / N) %>%  
+  # select useful variables 
+  select(year, gender, n, f) %>% 
+  # keep only distinct rows
+  distinct()
+```
+
+```{r}
+ggplot(egypop23_gender, aes(x="", y=f, fill=gender)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0)
+```
+
+```{r}
+ggplot(egypop23_gender, aes(x=gender, y=f, fill=gender)) +
+  geom_col(width=.8)
+```
+
+Exercise 1: Compute the relative frequency distribution of Egyptians by age in Milan in 2023.
+Is it easy to do it in base-R?
+
+### Example: Absolute and relative frequency distribution of Egyptians by year and gender in Milan
+
+
+- **Tidyverse**
+
+Compute the relative frequency of males and females across years
+
+```{r}
+egypop_gender <- milan_egypop %>% 
+  # total number of inhabitants by gender
+  group_by(gender) %>% 
+  mutate(N = sum(inhab)) %>% 
+  # perform operations by gender and year
+  group_by(gender, year) %>% 
+  # absolute frequency by gender
+  mutate(n = sum(inhab),
+         f = n / N) %>%  
+  # select useful variables 
+  select(year, gender, n, f) %>% 
+  # keep only distinct rows
+  distinct()
+```
+
+```{r}
+ggplot(egypop_gender, aes(x=year, y=n, fill=gender)) +
+  geom_col(width=.8) +
+  facet_grid(cols = vars(gender))
+
+ggplot(egypop_gender, aes(x=year, y=f, fill=gender)) +
+  geom_col(width=.8) +
+  facet_grid(cols = vars(gender))
+```
+
+Execise 2: Compute the absolute and relative frequency distribution of Egyptians by age and gender in Milan

@@ -35,7 +35,7 @@ names(milan_egypop) <- c("year", "id_nil", "nil", "age", "gender", "nat", "inhab
 
 If you want to count the relative frequency of certain observations in your sample, you can identify the interesting observations by using a logical expression; then calculate the fraction of observations it identifies.
 
-### Example: Relative frequency distribution of Egyptians by gender in Milan in 2023
+## Example: Relative frequency distribution of Egyptians by gender in Milan in 2023
 
 - **Base-R**
 
@@ -65,7 +65,7 @@ f_egypop23f <- n_egypop23f / N_egypop23
 f_egypop23f
 ```
 
-Visualize the frequency distribution
+Visualize the frequency distribution: pie chart
 
 ```{r}
 egypop23_gender <- c(rep("Maschi", n_egypop23m), rep("Femmine",  n_egypop23f))
@@ -95,12 +95,14 @@ egypop23_gender <- milan_egypop %>%
   # keep only distinct rows
   distinct()
 ```
+### Pie Chart
 
 ```{r}
 ggplot(egypop23_gender, aes(x="", y=f, fill=gender)) +
   geom_bar(stat="identity", width=1) +
   coord_polar("y", start=0)
 ```
+### Bar Plot
 
 ```{r}
 ggplot(egypop23_gender, aes(x=gender, y=f, fill=gender)) +
@@ -110,7 +112,7 @@ ggplot(egypop23_gender, aes(x=gender, y=f, fill=gender)) +
 Exercise 1: Compute the relative frequency distribution of Egyptians by age in Milan in 2023.
 Is it easy to do it in base-R?
 
-### Example: Absolute and relative frequency distribution of Egyptians by year and gender in Milan
+## Example: Absolute and relative frequency distribution of Egyptians by year and gender in Milan
 
 
 - **Tidyverse**
@@ -132,6 +134,7 @@ egypop_gender <- milan_egypop %>%
   # keep only distinct rows
   distinct()
 ```
+### Bar Plot
 
 ```{r}
 ggplot(egypop_gender, aes(x=year, y=n, fill=gender)) +
@@ -141,6 +144,14 @@ ggplot(egypop_gender, aes(x=year, y=n, fill=gender)) +
 ggplot(egypop_gender, aes(x=year, y=f, fill=gender)) +
   geom_col(width=.8) +
   facet_grid(cols = vars(gender))
+```
+
+### Trend plot
+
+```{r}
+ggplot(egypop_gender, aes(x=year, y=f, color=gender, group=gender)) +
+  geom_point() +
+  geom_line()
 ```
 
 Execise 2: Compute the absolute and relative frequency distribution of Egyptians by age and gender in Milan

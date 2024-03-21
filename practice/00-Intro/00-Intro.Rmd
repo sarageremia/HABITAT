@@ -23,8 +23,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### *Textbooks*
 
-- Wood, S.N. (2016). [Core Statistics](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.maths.ed.ac.uk/~swood34/core-statistics.pdf).
-- Long, J., & Teetor, P. (2019). [R Cookbook, 2nd Edition] (https://rc2e.com/).    
+- Wood, S.N. (2016). [Core Statistics](https://www.maths.ed.ac.uk/~swood34/core-statistics.pdf).
+- Long, J., & Teetor, P. (2019). [R Cookbook, 2nd Edition](https://rc2e.com/).    
 - Xie, Y., J.J. Allaire & G. Grolemund. (2023). [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/)
 
 
@@ -35,15 +35,15 @@ It is open source and includes a wide set of tools for data analysis.
 
 Installing Base-R:
 
-- Windows [cran.r-project.org/bin/windows/base/](cran.r-project.org/bin/windows/base/)   
-- Mac [cran.r-project.org/bin/macosx/](cran.r-project.org/bin/macosx/)   
-- Linux [cran.r-project.org/bin/linux/](cran.r-project.org/bin/linux/)
+- Windows [cran.r-project.org/bin/windows/base/](https://cran.r-project.org/bin/windows/base/)   
+- Mac [cran.r-project.org/bin/macosx/](https://cran.r-project.org/bin/macosx/)   
+- Linux [cran.r-project.org/bin/linux/](https://cran.r-project.org/bin/linux/)
 
 # RStudio Software
 
 **RStudio** is a open source integrated development environment for R.
 
-- [www.rstudio.com/products/rstudio/download/](www.rstudio.com/products/rstudio/download/)
+- [www.rstudio.com/products/rstudio/download/](https://posit.co/download/rstudio-desktop/)
 
 ### *The Four RStudio Panes*
 
@@ -168,7 +168,7 @@ clicking on "Install" and typing the name of the package (e.g., "ggplot2")
 The **Help** panel provides access to documentation and help for R functions and packages.
 You can type the function or package name in the search bar or
 
-```{r}
+```{r eval = FALSE}
 # use the help() function
 help(sqrt)
 
@@ -180,9 +180,6 @@ help(sqrt)
 or select the text of the function and use a shortcut (F1).
 
 # Vectors
-
-![]("practice/00-Intro/img/vec_overview.png")
-
 
 ### **Logical vectors**
 
@@ -264,11 +261,6 @@ When you create a factor, R automatically assigns levels to the categories based
  
 Sometimes you want to do different things based on the type of vector. One option is to use `typeof()`. Another is to use a test function which returns a `TRUE` or `FALSE`. 
 
-```{r echo=FALSE}
-knitr::include_graphics("practice/00-Intro/img/test_functions.png")
-
-```
-
 There are two ways to convert, or coerce, one type of vector to another:
 
 - Explicit coercion happens when you call a function like `as.logical()`, `as.integer()`, `as.double()`, or `as.character()`. 
@@ -285,7 +277,6 @@ y
 # How many are greater than 10?
 sum(y)
 ```
-
 
 **Indexing vectors** in R allows you to access specific elements or subsets of a vector. There are different methods for indexing vectors, including single-element indexing, multi-element indexing, and conditional indexing. Let's explore these methods with practical examples:
 

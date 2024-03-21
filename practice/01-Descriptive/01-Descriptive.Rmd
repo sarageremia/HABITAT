@@ -155,3 +155,5 @@ ggplot(egypop_gender, aes(x=year, y=f, color=gender, group=gender)) +
 ```
 
 Execise 2: Compute the absolute and relative frequency distribution of Egyptians by age and gender in Milan
+
+Exercise 3: Explore [ggplot2](https://rstudio.github.io/cheatsheets/html/data-visualization.html?_gl=1*j5gmuz*_ga*MjYyNDg5NzQ4LjE3MDI1NTA4OTI.*_ga_2C0WZ1JHG0*MTcxMTAwNzc5OS4xMi4wLjE3MTEwMDc3OTkuMC4wLjA.) cheatsheet and try to develop an histogram on salary data.

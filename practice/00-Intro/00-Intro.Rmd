@@ -181,9 +181,7 @@ or select the text of the function and use a shortcut (F1).
 
 # Vectors
 
-```{r echo=FALSE}
-knitr::include_graphics("img/data-structures-overview.png")
-```
+![]("practice/00-Intro/img/vec_overview.png")
 
 
 ### **Logical vectors**
@@ -202,8 +200,11 @@ The comparison operators (==, !=, <, >, <=, >=) can perform an element-by-elemen
 ```{r}
 1:10 %% 3 == 0
 
+set.seed(111)
+# sampling with replacement
 x <- sample(1:20, 10, replace = TRUE)
 x
+# testing where x is greater than 10
 x > 10
 ```
 
@@ -227,6 +228,10 @@ To check for these special values use the helper functions is.na(), is.finite(),
 
 ```{r}
 is.nan(c(-1, 0, 1) / 0)
+
+na_vector <- c(1, 2, NA)
+
+is.na(na_vector)
 ```
 
 ### **Character vectors**
@@ -260,7 +265,8 @@ When you create a factor, R automatically assigns levels to the categories based
 Sometimes you want to do different things based on the type of vector. One option is to use `typeof()`. Another is to use a test function which returns a `TRUE` or `FALSE`. 
 
 ```{r echo=FALSE}
-knitr::include_graphics("img/test-functions.png")
+knitr::include_graphics("practice/00-Intro/img/test_functions.png")
+
 ```
 
 There are two ways to convert, or coerce, one type of vector to another:
@@ -420,7 +426,7 @@ A[, 1:2]
 
 # Lists
 
-n R, a list is a versatile data structure that can hold elements of different data types. Unlike vectors and matrices, which can only hold elements of the same type, lists can store a mix of numeric, character, logical, or even other lists. This flexibility makes lists powerful for organizing and managing heterogeneous data.
+In R, a list is a versatile data structure that can hold elements of different data types. Unlike vectors and matrices, which can only hold elements of the same type, lists can store a mix of numeric, character, logical, or even other lists. This flexibility makes lists powerful for organizing and managing heterogeneous data.
 
 You can create a list in R using the list() function:
 
@@ -444,7 +450,7 @@ my_list[1]
 my_list[[1]]
 
 class(my_list[1])
-class(my_list[[1]])
+class(my_list[[2]])
 
 ```
 

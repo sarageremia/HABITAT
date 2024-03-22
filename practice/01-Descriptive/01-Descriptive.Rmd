@@ -28,10 +28,6 @@ str(milan_egypop)
 ```
 
 
-```{r}
-names(milan_egypop) <- c("year", "id_nil", "nil", "age", "gender", "nat", "inhab")
-```
-
 
 If you want to count the relative frequency of certain observations in your sample, you can identify the interesting observations by using a logical expression; then calculate the fraction of observations it identifies.
 
@@ -134,6 +130,7 @@ egypop_gender <- milan_egypop %>%
   # keep only distinct rows
   distinct()
 ```
+
 ### Bar Plot
 
 ```{r}

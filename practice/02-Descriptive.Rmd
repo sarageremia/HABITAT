@@ -1,0 +1,135 @@
+---
+title: "Summary Statistics with R"
+author: "Sara Geremia"
+date: "2024-03-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+The summary function gives some useful statistics for vectors, matrices, factors, and data frames:
+
+```{r}
+vec <- sample(1:20, 10, replace = TRUE)
+summary(vec)
+```
+
+The Solution exhibits the summary of a vector. The 1st Qu. and 3rd Qu. are the first and third quartile, respectively. Having both the median and mean is useful because you can quickly detect skew. The preceding Solution, for example, shows a median that is larger than the mean; this indicates a possible skew to the left.
+
+The summary of a matrix works column by column. Here we see the summary of a matrix, mat, with three columns named s1, s2, and s3
+
+```{r}
+s1 <- sample(1:20, 10, replace = TRUE)
+s2 <- sample(1:20, 10, replace = TRUE)
+s3 <- sample(1:20, 10, replace = TRUE)
+
+mat <- cbind(s1, s2, s3)
+summary(mat)
+``` 
+
+The summary of a factor gives counts:
+
+
+```{r}
+weather <- factor(c("Sunny", "Rainy", "Cloudy", "Sunny", "Rainy"))
+summary(weather)
+```
+
+The summary of a data frame incorporates all these features. It works column by column, giving an appropriate summary according to the column type. Numeric values receive a statistical summary and factors are counted (character strings are not summarized)
+
+```{r}
+names <- c("John", "Jane", "Frank", "Mike", "Alice")
+numbers <- 1:5
+logical_vals <- c(TRUE, FALSE, FALSE, FALSE, TRUE)
+
+df <- data.frame(name = names, id = numbers, gender = logical_vals, weather = weather)
+
+summary(df)
+```
+
+Load data
+
+```{r}
+load("practice/01-Descriptive/data/milan_egypop.RData")
+```
+
+```{r}
+str(milan_egypop)
+summary(milan_egypop$age)
+```
+
+- **Base-R**
+
+Compute the weighted mean age
+
+```{r}
+sum(milan_egypop$age * milan_egypop$inhab) / sum(milan_egypop$inhab)
+
+weighted.mean(milan_egypop$age, milan_egypop$inhab)
+```
+
+Compute the weighted mean age by gender
+
+```{r}
+
+milan_egypop_m <- milan_egypop[milan_egypop$gender == "Maschi", ]
+milan_egypop_f <- milan_egypop[milan_egypop$gender != "Maschi", ]
+
+weighted.mean(milan_egypop_m$age, milan_egypop_m$inhab)
+weighted.mean(milan_egypop_f$age, milan_egypop_f$inhab)
+
+```
+
+- **Tidyverse**
+
+```{r}
+# weighted mean
+milan_egypop %>% 
+  summarise(mean_age = weighted.mean(age, inhab))
+
+# conditional mean
+milan_egypop %>%
+  group_by(gender) %>% 
+  summarise(mean_age = weighted.mean(age, inhab))
+
+```
+## Box Plot
+
+- **Base-R**
+
+Create a box plot for age
+
+```{r}
+milan_egypop_age <- rep(milan_egypop$age, milan_egypop$inhab)
+boxplot(milan_egypop_age)
+```
+
+- **Tidyverse**
+
+```{r}
+milan_egypop_age <- bind_cols(age = rep(milan_egypop$age, milan_egypop$inhab),
+          gender = rep(milan_egypop$gender, milan_egypop$inhab))
+
+milan_egypop_age %>% 
+  ggplot(aes(y = age)) +
+  geom_boxplot()
+
+milan_egypop_age %>% 
+  ggplot(aes(y = age, fill = gender)) +
+  geom_boxplot()
+```
+
+Compute the variance
+
+```{r}
+var(milan_egypop_age$age)
+
+milan_egypop_age %>% 
+  group_by(gender) %>% 
+  summarise(var = var(age))
+```
+

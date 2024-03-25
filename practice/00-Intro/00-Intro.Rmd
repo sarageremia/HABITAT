@@ -28,7 +28,6 @@ knitr::opts_chunk$set(echo = TRUE)
 - Xie, Y., J.J. Allaire & G. Grolemund. (2023). [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/).
 - Wickham, H. (2023). [R for Data Science](https://r4ds.hadley.nz/).
 
-
 # R Software
 
 **R** is a free software environment for statistical analysis and graphics.    
@@ -493,6 +492,7 @@ If your data is captured in several vectors and/or factors, use the data.frame f
 df <- data.frame(names, numeric_vector, logical_vals, weather)
 df
 ```
+
 Notice that data.frame takes the column names from your program variables. You can override that default by supplying explicit column names:
 
 ```{r}

@@ -18,7 +18,7 @@ load("practice/01-Descriptive/data/milan_egypop.RData")
 ```
 
 ```{r}
-head(milan_egypop)
+head(milan_egypop, 10)
 tail(milan_egypop)
 ```
 The `str` function compactly display the internal structure of an R object, in this case a data frame.
@@ -26,8 +26,6 @@ The `str` function compactly display the internal structure of an R object, in t
 ```{r}
 str(milan_egypop)
 ```
-
-
 
 If you want to count the relative frequency of certain observations in your sample, you can identify the interesting observations by using a logical expression; then calculate the fraction of observations it identifies.
 
@@ -41,11 +39,13 @@ Compute the relative frequency of males and females in 2023
 # filter by gender and year
 egypop23m <- milan_egypop[milan_egypop$gender == "Maschi" & milan_egypop$year == 2023, ]
 
+# absolute frequency of males in 2023
+n_egypop23m <- sum(egypop23m$inhab)
+
 # total number of inhabitants in 2023
 N_egypop23 <- sum(milan_egypop$inhab[milan_egypop$year == 2023])
 
-# absolute frequency of males in 2023
-n_egypop23m <- sum(egypop23m$inhab)
+
 # relative frequency of males in 2023
 f_egypop23m <- n_egypop23m / N_egypop23
 f_egypop23m
@@ -76,6 +76,8 @@ pie(table(egypop23_gender))
 Compute the relative frequency of males and females in 2023
 
 ```{r}
+library(tidyverse)
+
 egypop23_gender <- milan_egypop %>% 
   # filter by year
   filter(year == 2023) %>%

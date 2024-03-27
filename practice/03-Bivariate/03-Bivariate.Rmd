@@ -1,0 +1,111 @@
+---
+title: "Bivariate Analysis with R"
+author: "Sara Geremia"
+date: "2024-03-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load necessary libraries
+library(readr)
+library(tidyverse)
+```
+
+## Conduct a bivariate analysis on two qualitative variables
+
+```{r}
+# Milan_pop is the data frame with disaggregated distributions of 'gender' and 'nationality'
+load("practice/03-Bivariate/data/milan_pop.RData")
+
+# Two-way contingency table of gender and nationality
+table(milan_pop$gender, milan_pop$nationality)
+
+# Relative frequencies for nationality conditioned on gender (margins for rows)
+prop.table(table(milan_pop$gender, milan_pop$nationality), margin = 1)
+# Relative frequencies for gender conditioned on nationality (margins for columns)
+prop.table(table(milan_pop$gender, milan_pop$nationality), margin = 2)
+
+# Relative frequencies for the joint distribution of gender and nationality
+prop.table(table(milan_pop$gender, milan_pop$nationality))
+prop.table(table(milan_pop$gender, milan_pop$nationality), margin = c(1, 2))
+
+chisq.test(milan_pop$nationality, milan_pop$gender)
+```
+
+```{r}
+milan_pop %>% 
+  ggplot() +
+  geom_bar(aes(x = nationality, fill = gender)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+milan_pop %>% 
+  ggplot() +
+  geom_bar(aes(x = nationality, fill = gender),
+           position = position_dodge()) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+## Conduct a bivariate analysis on two quantitative continuous variables
+
+```{r}
+# Load the 'lex' and 'gdp' datasets
+lex <- read.csv("practice/03-Bivariate/data/lex.csv")
+gdp <- read.csv("practice/03-Bivariate/data/gdp_pcap.csv")
+```
+
+
+```{r eval = FALSE}
+# Display the first few rows and dimensions of the datasets
+head(lex)
+dim(lex)
+
+head(gdp)
+dim(gdp)
+```
+```{r}
+# Find the countries that are in 'lex' but not in 'gdp'
+setdiff(lex$country, gdp$country)
+which(lex == setdiff(lex$country, gdp$country))
+
+# Remove the row for the country not in 'gdp' from 'lex'
+lex <- lex[-102, c(1, 302)]
+gdp <- gdp[, c(1, 302)]
+
+# Rename the columns to 'lex' and 'gdp'
+names(lex)[2] <- "lex"
+names(gdp)[2] <- "gdp"
+
+# Merge the two datasets based on 'country'
+gapminder_data <- left_join(lex, gdp)
+
+# Convert 'gdp' values ending with 'k' to numeric values * 1000
+gapminder_data$gdp[grepl("k", gapminder_data$gdp)] <- as.numeric(str_sub(gapminder_data$gdp[grepl("k", gapminder_data$gdp)], end = -2)) * 1000
+gapminder_data$gdp <- as.numeric(gapminder_data$gdp)
+```
+
+```{r}
+# Display summary statistics of the merged dataset
+summary(gapminder_data)
+
+# Remove rows where 'lex' is equal to 0
+gapminder_data <- gapminder_data[gapminder_data$lex != 0, ]
+```
+
+
+```{r}
+# Scatter Plot of GDP against Lex
+gapminder_data %>% 
+  ggplot() +
+  geom_point(aes(x = gdp, y = lex)) +
+  ylim(c(0, 100))
+```
+
+```{r}
+# Calculate covariance and correlation between 'gdp' and 'lex'
+cov(gapminder_data$gdp, gapminder_data$lex)
+cor(gapminder_data$gdp, gapminder_data$lex)
+```
+

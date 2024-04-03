@@ -23,9 +23,9 @@ load("practice/03-Bivariate/data/milan_pop.RData")
 table(milan_pop$gender, milan_pop$nationality)
 
 # Relative frequencies for nationality conditioned on gender (margins for rows)
-prop.table(table(milan_pop$gender, milan_pop$nationality), margin = 1)
+round(prop.table(table(milan_pop$gender, milan_pop$nationality), margin = 1), digits = 3)
 # Relative frequencies for gender conditioned on nationality (margins for columns)
-prop.table(table(milan_pop$gender, milan_pop$nationality), margin = 2)
+floor(prop.table(table(milan_pop$gender, milan_pop$nationality), margin = 2))
 
 # Relative frequencies for the joint distribution of gender and nationality
 prop.table(table(milan_pop$gender, milan_pop$nationality))

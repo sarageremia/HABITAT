@@ -1,0 +1,248 @@
+---
+title: "Hypothesis Testing with R"
+author: "Sara Geremia"
+date: "2024-04-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(fst)
+```
+
+
+```{r}
+# load data
+stack_overflow <- readRDS("practice/06-Inference/data/stack_overflow.rds")
+head(stack_overflow)
+```
+
+## Population proportion
+
+`age_first_code_cut` classifies when Stack Overflow user first started programming
+
+1. `"adult"` means they started at 14 or older   
+2. `"child"` means they started before 14
+
+Previous research suggests that 35% of software developers started programming as children
+
+**Null hypothesis ($H_0$)**: The proportion of child software developers is **35%**.
+
+```{r}
+prop_child_hyp <- 0.35
+```
+
+Does our sample provide evidence that data scientists have a greater proportion starting programming as a child?
+
+**Alternative hypothesis ($H_1$)**: The proportion of child software developers is **greater than 35%**.
+
+
+```{r}
+# Calcuchild the proportion of child software developers
+n <- nrow(stack_overflow)
+prop_child_samp <- sum(stack_overflow$age_first_code_cut == "child") / n
+
+# alternatively: compute the mean of the 0/1 variable
+
+stack_overflow$age_first_code_cut <- ifelse(stack_overflow$age_first_code_cut == "child", 1, 0)
+prop_child_samp <- mean(stack_overflow$age_first_code_cut)
+
+# See the results
+prop_child_samp
+```
+
+The sample proportion of child software developers is `r prop_child_samp``. It is the **point estimate**.
+ 
+Conduct repeted sampling: generate the sampling distribution for the proportion
+
+```{r}
+resample_prop <- replicate(
+  n = 5000,
+  expr = {
+    # Step 1. Resample
+    stack_overflow %>%
+      slice_sample(prop = 1, replace = TRUE) %>%
+      # Step 2. Calcuchild point estimate
+      summarize(prop_child = mean(age_first_code_cut)) %>%
+      pull(prop_child)
+  }
+)
+
+tibble(resample_prop) %>%
+  ggplot(aes(resample_prop)) +
+  geom_histogram()
+
+```
+
+```{r}
+std_child <- sd(resample_prop)
+```
+
+Since variables have arbitrary ranges and units, we need to standardize them. For example, it would be silly if a hypothesis test gave a different answer if your variables were in Euros instead of US dollars. Standardization avoids that.
+
+One standardized value of interest in a hypothesis test is called a z-score. To calculate it, we need three numbers: the sample statistic (point estimate), the hypothesized statistic, and the standard deviation of the statistic (which we estimate from the bootstrap distribution).
+
+
+```{r}
+z_child <-(prop_child_samp - prop_child_hyp)/ std_child
+```
+
+Is `r z_child` a high or low number? Our goal is to determine whether sample statistics are close to or far away from expected (or "hypothesized" values).
+
+If you give a single estimate of a sample statistic, you are bound to be wrong by some amount. 
+
+For example, the hypothesized proportion of child software developers is `r prop_child_samp`. 
+Even if evidence suggests the null hypothesis that the proportion of child software developers is equal to this, for any new sample of data scientists, the proportion is likely to be a little different. Consequently, it's a good idea to state a confidence interval. That is, you say "we are 95% 'confident' the proportion of child software developers is between A and B" (for some value of A and B).
+
+Calculate 95% confidence interval using quantiles of the sampling distribution
+
+```{r}
+ci_child <- tibble(resample_prop) %>%  
+  summarize(    
+    lower = quantile(resample_prop, 0.025),    
+    upper = quantile(resample_prop, 0.975)
+    )
+```
+Does the confidence interval match up with the original assumption that 35% is a reasonable value for the unknown population parameter?
+
+No, since the proportion hypothesis 0.35 is not included in the 95% confidence interval.          
+Therefore, we should proceed with testing our null hypothesis against the alternative hypothesis, where we hypothesize that the proportion of child software developers exceeds 35%. 
+The alternative hypothesis is the new "challenger" idea of the researcher.
+
+Hypothesis tests determine whether the sample statistic lie in the tails of the null distribution.
+
+In order to determine whether to choose the null or the alternative hypothesis, you need to calculate a probability, known as the **$p-value$**, from the z-score. A smaller p-value indicates stronger evidence against $H_0$, suggesting that the sample statistic are more likely to reside in the tail of the null distribution (the distribution of thestatistic if the null hypothesis was true).
+
+*A p-value is the probability of observing a test statisticas extreme or more extreme than what was observed in our original sample, assuming the null hypothesis is true.*
+
+```{r}
+pvalue_child <- pnorm(z_child, lower.tail = FALSE)
+```
+
+- Left-tailed test $\rightarrow$ use default `lower.tail = TRUE`      
+- Right-tailed test $\rightarrow$ set `lower.tail = FALSE`.
+
+The significance level of a hypothesis test ($\alpha$) is the threshold point for "beyond a reasonable doubt"
+
+Common values of $\alpha$ are 0.1, 0.05, and 0.01.
+
+By comparing the $p-value$ to the significance level $\alpha$, you can make a decision about which hypothesis to support.
+
+```{r}
+alpha <- 0.05
+
+pvalue_child <= alpha
+```
+
+$p-value$ is less than or equal to $\alpha$, so reject $H_0$ and accept $H_1$.
+The proportion of data scientists starting programming as children is greater than 35%.
+
+If $p-value \leq \alpha$, we reject $H_0$: 
+
+- A false positive (Type I) error could have occurred: we thought that data scientists startedcoding as children at a higher rate when in reality they did not.
+
+If $p-value > \alpha$, we fail to reject $H_0$:
+
+
+- A false negative (Type II) error could have occurred: we thought that data scientists codedas children at the same rate as software engineers when in reality they coded as children ata higher rate.
+
+
+
+## Population mean
+
+**Null hypothesis**: The mean annual compensation of the population of data scientists is **$110,000**.
+
+Does our sample provide evidence that data scientists have a greater annual compensation?
+
+**Alternative hypothesis ($H_1$)**: The mean annual compensation of the population of data scientists is **greater than $110,000**.
+
+```{r}
+mean_comp_hyp <- 110000
+```
+
+Compute the mean in our sample of data scientists:
+
+```{r}
+mean_comp_samp <- mean(stack_overflow$converted_comp)
+```
+
+
+The sample mean of annual compensation of the population of data scientists is `119,574.7`. It is our **point estimate**.
+
+Conduct repeted sampling: generate the mean sampling distribution
+
+```{r}
+resample_mean <- replicate(
+  n = 5000,
+  expr = {
+    # Step 1. Resample
+    stack_overflow %>%
+      slice_sample(prop = 1, replace = TRUE) %>%
+      # Step 2. Calculate point estimate
+      summarize(mean_compensation = mean(converted_comp)) %>%
+      pull(mean_compensation)
+  }
+)
+
+tibble(resample_mean) %>%
+  ggplot(aes(resample_mean)) +
+  geom_histogram(binwidth = 1000)
+
+```
+
+```{r}
+std_comp <- sd(resample_mean)
+```
+
+```{r}
+z_comp <-(mean_comp_samp - mean_comp_hyp)/ std_comp
+```
+
+```{r}
+ci_comp <- tibble(resample_mean) %>%  
+  summarize(    
+    lower = quantile(resample_mean, 0.025),    
+    upper = quantile(resample_mean, 0.975)
+    )
+
+ci_comp
+```
+
+```{r}
+pvalue_comp <- pnorm(z_comp, lower.tail = FALSE)
+```
+
+
+```{r}
+alpha <- 0.05
+
+pvalue_child <= alpha
+```
+
+
+```{r}
+# Calculate the sample standard deviation
+std_comp_samp <- sd(stack_overflow$converted_comp) # sample standard deviation  
+
+# Confidence intervals
+# Upper bound of confidence interval
+mean_comp_samp + qt(1 - alpha/2, df = n - 1) * std_comp_samp / sqrt(n)
+# Lower bound of confidence interval
+mean_comp_samp - qt(1 - alpha/2, df = n - 1) * std_comp_samp / sqrt(n)
+
+t.test(stack_overflow$converted_comp, mu = 110000)$conf.int
+
+# Calculate the test statistic
+t_comp <- (mean_comp_samp - mean_comp_hyp) / (s_comp / sqrt(n))  
+
+# Calculate the p-value
+pt(t_comp, n - 1, lower.tail = FALSE)
+
+# Perform one-sample t-test and compare the results
+t_test_result <- t.test(stack_overflow$converted_comp, mu = 110000, alternative = "greater")
+t_test_result$p.value
+
+t_test_result
+```

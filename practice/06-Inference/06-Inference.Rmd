@@ -9,7 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(fst)
 ```
 
 
@@ -218,7 +217,7 @@ pvalue_comp <- pnorm(z_comp, lower.tail = FALSE)
 ```{r}
 alpha <- 0.05
 
-pvalue_child <= alpha
+pvalue_comp <= alpha
 ```
 
 
@@ -235,7 +234,7 @@ mean_comp_samp - qt(1 - alpha/2, df = n - 1) * std_comp_samp / sqrt(n)
 t.test(stack_overflow$converted_comp, mu = 110000)$conf.int
 
 # Calculate the test statistic
-t_comp <- (mean_comp_samp - mean_comp_hyp) / (s_comp / sqrt(n))  
+t_comp <- (mean_comp_samp - mean_comp_hyp) / (std_comp_samp / sqrt(n))  
 
 # Calculate the p-value
 pt(t_comp, n - 1, lower.tail = FALSE)

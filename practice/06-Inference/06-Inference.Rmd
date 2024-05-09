@@ -118,6 +118,9 @@ In order to determine whether to choose the null or the alternative hypothesis, 
 
 ```{r}
 pvalue_child <- pnorm(z_child, lower.tail = FALSE)
+
+2 * pnorm(z_child, lower.tail = FALSE)
+
 ```
 
 - Left-tailed test $\rightarrow$ use default `lower.tail = TRUE`      

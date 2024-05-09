@@ -1,0 +1,342 @@
+---
+title: "Introduction to regression with R"
+author: "Sara Geremia"
+date: "2024-05-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, 
+                      error = FALSE, message = FALSE)
+
+library(tidyverse)
+library(knitr)
+```
+
+## What is regression?
+
+Suppose a father shares his family's intention to relocate to a neighborhood in Taiwan with a substantial number of convenience stores within walking distance. He is particularly interested in a specific district where house prices are not publicly available, but he possesses information regarding the district's count of convenience stores. Consequently, he queries: if he provides the district’s number of stores, can you estimate the district’s house prices?
+
+This inquiry delves into the relationship between real estate pricing (the Y variable) and the number of convenience stores within walking distance (the X variable).
+
+To provide an answer you need to understand how X relates with Y, on average, across various real estate properties. This knowledge allows the utilization of this relationship to **predict** Y given X in a specific district.
+
+## Simple linear regression model
+
+We introduce the **simple linear regression model**, which establishes a linear relationship between X and Y. In this model, Y serves as the response or dependent variable, while X acts as the explanatory or independent variable. It's important to note that in linear regression, the response variable must be numeric. If the response variable is binary (taking TRUE/FALSE values), logistic regression is conducted. Simple linear or logistic regression models incorporate only one explanatory variable.
+
+Regression lets you predict the values of a response variable from known values of explanatory variables. Which variable you use as the response variable depends on the question you are trying to answer, but in many datasets there will be an obvious choice for variables that would be interesting to predict.
+
+Lets explore our Taiwan real estate dataset. Which one is the response variable?
+
+```{r}
+taiwan_real_estate <- fst::read.fst("practice/07-Regression/taiwan_real_estate.fst")
+
+head(taiwan_real_estate)
+dim(taiwan_real_estate)
+```
+
+
+
+```{r echo=FALSE}
+matrix(c("dist_to_mrt_m",	"Distance to nearest MRT metro station, in meters", "n_convenience","	No. of convenience stores in walking distance", 
+"house_age_years",	"The age of the house, in years, in 3 groups",
+"price_twd_msq",	"House price per unit area, in New Taiwan dollars per meter squared"), 4, 2, byrow = TRUE) %>% 
+  kable(col.names = c("Variable", "Meaning"))
+```
+
+
+Before you can run any statistical models, it's usually a good idea to visualize your dataset and perform summary statistics. Here, we'll look at the relationship between house price per area and the number of nearby convenience stores.
+
+```{r}
+taiwan_real_estate[, c(2, 4)] %>% 
+  summarise_all(mean)
+
+taiwan_real_estate %>% 
+  summarise(correlation = cor(price_twd_msq, n_convenience))
+```
+
+To visualize the relationship between two numeric variables, you can use a scatter plot.
+In the plot, you can see that the price increases as the number of convenience stores increases. It would be nice to be able to describe this increase more precisely.
+
+```{r}
+ggplot(  
+  taiwan_real_estate,  
+  aes(n_convenience, price_twd_msq)) +  
+  geom_point(alpha = .5)
+```
+
+One refinement we can make is to add a trend line to the scatter plot. A trend line means fitting a line that follows the data points.
+In ggplot, trend lines are added using geom_smooth(). Setting the method argument to "lm", for "linear model" gives a trend line calculated with a linear regression. This means the trend line is a straight line that follows the data as closely as possible. 
+
+
+```{r}
+ggplot(taiwan_real_estate, aes(n_convenience, price_twd_msq)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(    
+    method = "lm",   
+    se = FALSE)
+```
+
+Straight lines are completely defined by two properties. The intercept ($\beta_0$) is the $y$ value when $x_1$ is zero. The slope ($\beta_1$) is the steepness of the line, equal to the amount  $y$ increases if you increase $x_1$ by one. The equation for a straight line is that the $y$ value is the intercept plus the slope times the $x_1$ value.
+
+In the case of house prizes and number of stores, this linear function can be 
+written:
+
+$$\mathbb{E}(price\_twd\_msq|n\_convenience) = \beta_0 + \beta_{n\_convenience}\times n\_convenience$$
+This is the relationship that holds between Y and X, on average, over the population.
+
+The intercept $\beta_0$ and the slope $\beta_1$ are the coefficients of the population regression line, also known as the parameters of the population regression line. 
+
+Let's try to estimate the intercept. To find the intercept, look at where the trend line intersects the y axis. 
+It is close to the 10 mark, so I guess it is about 8.
+
+```{r}
+ggplot(taiwan_real_estate, aes(n_convenience, price_twd_msq)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(    
+    method = "lm",   
+    se = FALSE) +
+  geom_vline(xintercept = 0, color = "red", linetype = 3, size = 1.5)
+```
+
+To estimate the slope, we need two points. To make the guessing easier, I've chosen points where the line is close to the gridlines.
+First, we calculate the change in y values between the points. One y value is about 15 and the other is about 10, so the difference is 5.
+Now we do the same for the x axis. One point is at 8.75, the other at 2.5 So the difference is 6.25. To estimate the slope we divide one number by the other: 5 / 6.25 = 0.8.
+
+```{r}
+
+include_graphics(here::here("practice/07-Regression/slope.png"))
+```
+
+
+**Let's run a linear regression to check our guess.**
+
+To run a linear regression model, you call the `lm` function with two arguments. The first argument is a formula. This is a type of variable used by many modeling functions. The response variable is written to the left of the tilde, and the explanatory variable is written to the right. The data argument takes the data frame containing the variables. When you print the resulting model, it tells you the code you used to create it, and two coefficients. These coefficients are the intercept and slope of the straight line.
+
+
+```{r}
+mdl_price_vs_nconv <- lm(price_twd_msq ~ n_convenience, data = taiwan_real_estate)
+mdl_price_vs_nconv
+```
+
+
+On average, a house with zero convenience stores nearby had a price of `8.2242 TWD` per square meter.
+
+The intercept is positive, so a house with no convenience stores nearby still has a positive price. The coefficient for convenience stores is also positive, so as the number of nearby convenience stores increases, so does the price of the house.
+In particular, If you increase the number of nearby convenience stores by one, then the expected increase in house price is `0.7981 TWD` per square meter.
+
+In general, the magnitude of the coefficient $\beta_1$ indicates the strength of the relationship between the independent and dependent variables. A larger coefficient suggests a more substantial impact of the independent variable on the dependent variable. The sign of the coefficient (+/-) indicates the direction of the relationship: positive coefficients imply a positive correlation, while negative coefficients signify a negative correlation.
+
+
+## Categorical explanatory variables
+
+So far we looked at running a linear regression using a numeric explanatory variable. Now let's look at what happens with a categorical explanatory variable.
+
+The Taiwan real estate dataset has a categorical variable in the form of the age of each house. The ages have been split into 3 groups: 0 to 15 years, 15 to 30 years, and 30 to 45 years.
+Because the dataset is fairly small I set the bins argument of geom_histogram() to just ten.  To give a panel for each group, I used facet_wrap(). This takes the name of the variable to split on, wrapped in the vars() function.
+
+```{r}
+# Using taiwan_real_estate, plot price_twd_msq
+ggplot(taiwan_real_estate, aes(price_twd_msq)) +
+  # Make it a histogram with 10 bins
+  geom_histogram(bins = 10) +
+  # Facet the plot so each house age group gets its own panel
+  facet_wrap(vars(house_age_years))
+
+```
+
+It appears that new houses are the most expensive on average, and the medium aged ones (15 to 30 years) are the cheapest.
+
+A good way to explore categorical variables is to calculate summary statistics such as the mean for each category. Here, you'll look at grouped means for the house prices in the Taiwan real estate dataset.
+
+```{r}
+summary_stats <- taiwan_real_estate %>% 
+  # Group by house age
+  group_by(house_age_years) %>% 
+  # Summarize to calculate the mean house price/area
+  summarise(mean_by_group = round(mean(price_twd_msq), 3))
+
+# See the result
+summary_stats
+```
+
+**Let's run a linear regression using `price_twd_msq` as the response variable and `house_age_years` as the explanatory variable**
+
+The syntax is the same: you call lm(), passing a formula with the response variable on the left and the explanatory variable on the right, and setting the data argument to the data frame. 
+
+
+```{r}
+# Run a linear regression of price_twd_msq vs. house_age_years
+mdl_price_vs_age <- lm(price_twd_msq ~ house_age_years, data = taiwan_real_estate)
+
+# See the result
+mdl_price_vs_age
+```
+
+This time we have three coefficients: an intercept, and one for two of the age groups. A coefficient for the old houses is missing, but the number for the intercept looks close to the mean price of the old houses that you just calculated. You might wonder what the other coefficients are, and why new houses has a negative coefficient, since prices can't be negative. The coefficients for each category are calculated relative to the intercept.
+
+This way of displaying results can be useful for models with multiple explanatory variables, but for simple linear regression, it's just confusing. Fortunately, we can fix it.
+
+```{r}
+# Update the model formula to remove the intercept
+mdl_price_vs_age_no_intercept <- lm(
+  price_twd_msq ~ house_age_years + 0, 
+  data = taiwan_real_estate
+)
+
+# See the result
+mdl_price_vs_age_no_intercept
+```
+
+
+By changing the formula slightly to append "plus zero", we specify that all the coefficients should be given relative to zero. Equivalently, it means we are fitting a linear regression without an intercept term. Now these coefficients make more sense. They are all just the mean prices for each age group. This is a reassuringly boring result. When you only have a single, categorical explanatory variable, the linear regression coefficients are the means of each category.
+
+## Prediction
+
+Coefficients allow for predictions to be made. By plugging in specific values for the independent variables into the regression equation, one can estimate the corresponding value of the dependent variable. This is particularly useful for forecasting outcomes based on different scenarios or input values.
+
+```{r}
+X <- taiwan_real_estate$n_convenience
+Y <- taiwan_real_estate$price_twd_msq
+
+Y.pred <- 8.2242 +  0.7981  * X 
+# or predict(mdl_price_vs_nconv)
+```
+
+
+## Quantyfing model fit
+
+So we now know how to estimate the coefficients of a linear regression model (at least with R). The problem is, we don’t yet know if this regression model is any good. In other words, how well the model describes the data.
+
+Visually, this amounts to assessing whether the observations are tightly clustered around the regression line. Both the **coefficient of determination** and the **standard error of the regression** measure how well the regression line fits the data.
+
+The Standard Error of the Regression (SER) is an estimator of the standard deviation of the residuals  $u^i$. As such it measures the magnitude of a typical deviation from the regression line, i.e., the magnitude of a typical residual.
+
+$$SER = \sqrt{\frac{1}{n-2}\sum_{i=1}^n \hat{u}_i^2}$$
+
+```{r}
+SER <- sqrt(sum(mdl_price_vs_nconv$residuals^2)/(nrow(taiwan_real_estate) - 2))
+SER
+```
+
+$R^2$, the coefficient of determination, is the fraction of the sample variance of $Y_i$ that is explained by $X_i$. Mathematically, the $R^2$ can be written as the ratio of the explained sum of squares to the total sum of squares.
+
+The explained sum of squares ($ESS$) is the sum of squared deviations of the predicted values  $\hat{Y}_i$, from the average of the  $Y_i$. The total sum of squares ($TSS$) is the sum of squared deviations of the  $Y_i$ from their average $\bar{Y}$. Thus we have:
+
+$$ESS = \sum_{i=1}^n (\hat{Y}_i - \bar{Y})^2$$
+
+$$TSS = \sum_{i=1}^n (Y_i - \bar{Y})^2$$
+
+$$R^2 = \frac{ESS}{TSS}$$
+
+Since \(TSS = ESS + SSR\) we can also write
+
+\[ R^2 = 1 - \frac{SSR}{TSS}, \]
+
+where \(SSR\) is the sum of squared residuals, a measure for the errors made when predicting \(Y\) by \(X\). The \(SSR\) is defined as
+
+\[ SSR = \sum_{i=1}^n \hat{u}_i^2. \]
+
+$R^2$  lies between 0 and 1. It is easy to see that if our estimated regression line does not explain any variation in the $Y_i$, we have $ESS=0$ and consequently $R^2=0$. A perfect fit, i.e., no errors made when fitting the regression line, implies  $R^2=1$.
+
+```{r}
+ESS <- sum((Y.pred - mean(Y))^2)
+ESS
+
+TSS <- sum((Y - mean(Y))^2)
+TSS
+
+SSR <- sum(mdl_price_vs_nconv$residuals^2)
+SSR
+
+ESS + SSR
+```
+
+```{r}
+R.squared <- ESS / TSS
+round(R.squared, 3)
+
+round(1 - SSR / TSS, 3)
+```
+
+
+Hence, 32.6% of the variance of the dependent variable score is explained by the explanatory variable `n_convenience`.
+
+$R^2$ comes with an inherent problem – additional input variables will make the $R^2$ stay the same or increase (this is due to how the $R^2$ is calculated mathematically). Therefore, even if the additional input variables show no relationship with the output variables, the $R^2$ will increase. Adjusted $R^2$ penalizes the addition of unnecessary variables. It considers the number of explanatory variables in the model and adjusts $R^2$ accordingly. 
+
+$$Adjusted-R^2 = 1 - (\frac{(1-R^2)(n-1)}{(n - k - 1)}$$
+where $n$ is the number of data points and $k$ the number of explanatory variables.
+
+
+```{r}
+n <- nrow(taiwan_real_estate)
+k <- 1
+
+adj.R.squared <- 1 - (((1-R.squared)*(n-1))/(n - k - 1))
+```
+
+
+
+
+Let’s call the output of our model using `summary()`. The model output will provide us with the information we need to assess how well the model fits our data.
+
+
+```{r}
+summary(mdl_price_vs_nconv)
+```
+
+
+The F test statistic tells us if there is a relationship between the dependent and independent variables we are testing. Generally, a large F indicates a stronger relationship. The p-value is associated with the F statistic, and is used to interpret the significance for the whole model fit to our data.
+
+The t statistic associated with each coefficient test our null hypothesis ($H_0$) that there is no relationship between the explanatory variable and our response variable.
+Our $H_0$ is that `n_convenience` and `price_twd_msq` are not related. 
+
+The t-test used to determine if the coefficients are significantly different from zero. A significant coefficient indicates that the relationship between the independent variable and the dependent variable is unlikely to be due to random chance.
+
+### Visualizing the model fit
+
+Linear regression analysis is predicated on several fundamental assumptions that ensure the validity and reliability of its results. Understanding and verifying these assumptions is crucial for accurate model interpretation and prediction.
+
+Linear Relationship: The core premise of multiple linear regression is the existence of a linear relationship between the dependent (outcome) variable and the independent variables. This linearity can be visually inspected using scatterplots, which should reveal a straight-line relationship rather than a curvilinear one.
+
+```{r}
+ggplot(taiwan_real_estate, aes(n_convenience, price_twd_msq)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(    
+    method = "lm",   
+    se = FALSE) +
+  labs(title='Scatter plot: house price vs n. convenience stores')
+```
+
+It is also important to check for outliers since linear regression is sensitive to outlier effects. 
+The trend line is mostly quite close to the data points, so we can say that the linear regression is a reasonable fit.
+
+
+
+Multivariate Normality: The analysis assumes that the residuals (the differences between observed and predicted values) are normally distributed. This assumption can be assessed by examining histograms or Q-Q plots of the residuals, or through statistical tests such as the Kolmogorov-Smirnov test.
+In a Q-Q plot, the observed residuals from the regression analysis are plotted against the quantiles of a theoretical normal distribution. If the residuals are normally distributed, they should follow a straight line pattern on the plot.
+
+```{r}
+taiwan_real_estate %>% 
+  mutate(residuals = mdl_price_vs_nconv$residuals) %>% 
+ggplot(aes(sample = residuals)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title='Q-Q plot', x='Theoreticsl', y='House Price')
+
+```
+
+The plotted points closely follow the diagonal line (the line of equality), this indicates that the assumption of normality of residuals is met,
+
+Homoscedasticity: The variance of error terms (residuals) should be consistent across all levels of the independent variables. A scatterplot of residuals versus predicted values should not display any discernible pattern, such as a cone-shaped distribution, which would indicate heteroscedasticity. Addressing heteroscedasticity might involve data transformation or adding a quadratic term to the model.
+
+```{r}
+#create residual plot
+ggplot(mdl_price_vs_nconv, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0) +
+  labs(title='Residual vs. Fitted Values Plot', x='Fitted Values', y='Residuals')
+```
+
+The residuals appear to be scattered around zero with no clear pattern, which indicates that the assumption of homoscedasticity is met.

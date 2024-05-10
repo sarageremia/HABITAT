@@ -1,0 +1,277 @@
+---
+title: "Simple logistic regression with R"
+author: "Sara Geremia"
+date: "2024-05-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, 
+                      error = FALSE, message = FALSE)
+
+library(tidyverse)
+library(knitr)
+```
+
+## What is logistic regression?
+
+Suppose a father shares his family's intention to relocate to a neighborhood in Taiwan, but he 
+face uncertainty about their mortgage approval. However, he possesses information regarding its payment-to-income ratio, which is the ratio of a borrower's monthly mortgage payment to their monthly income. Consequently, he queries: if he provides the P/I ratio, can you predict whether his mortgage application will be approved or denied?
+
+This inquiry delves into the relationship between a binary mortgage denial variable (the Y variable), where 1 indicates denial and 0 indicates approval, and the P/I ratio (the X variable).
+
+To provide an answer you need to understand how X relates with Y, on average, across various applicants. This knowledge allows the utilization of this relationship to **predict** the likelihood of mortgage denial based on the P/I ratio.
+
+## Simple linear regression model
+
+We are interested in the relationship between `mortgage` and `pi_ratio`, a regressor that ought to have power in explaining whether a mortgage application has been denied. It is straight forward to translate this into the simple regression model. 
+
+$$\mathbb{E}(mortgage|pi\_ratio) = P(Y = 1|pi\_ratio) =\beta_0 + \beta_{pi\_ratio}\times pi\_ratio$$
+
+With a binary dependent variable it is called the linear probability model. $\beta_1$ can be interpreted as the change in the probability that $Y = 1$,.
+
+It's important to note that in linear regression, the response variable must be numeric. 
+Hence, if we aim to estimate a linear regression model using `lm()` we'll have to treat the variable `mortgage` as a numeric variable.
+
+Lets explore our dataset.
+
+```{r}
+
+# library(AER)
+# data(HMDA)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Number of observations
+n <- 414
+
+# Generate P/I ratio values (assuming a normal distribution)
+pi_ratio <- rnorm(n, mean = 0.4, sd = 0.1)
+
+# Generate mortgage variable based on P/I ratio
+mortgage_prob <- pnorm(pi_ratio, mean = 0.4, sd = 0.1)
+mortgage <- rbinom(n, size = 1, prob = mortgage_prob)
+
+# Create dataset
+mortgage_data <- data.frame(mortgage = mortgage, pi_ratio = pi_ratio)
+
+# Display the first few rows of the dataset
+head(mortgage_data)
+summary(mortgage_data)
+
+```
+
+Before you can run any statistical models, it's usually a good idea to visualize your dataset and perform summary statistics. 
+
+```{r}
+mortgage_data %>% 
+  summarise_all(mean)
+
+mortgage_data %>% 
+  summarise(correlation = cor(mortgage, pi_ratio))
+```
+
+To visualize the relationship between two numeric variables, you can use a scatter plot.
+In the plot, you can see that the percentage of application denial seem to increase as the P/I ratio increases. It would be nice to be able to describe this increase more precisely.
+
+```{r}
+ggplot(  
+  mortgage_data,  
+  aes(pi_ratio, mortgage)) +  
+  geom_point(alpha = .5)
+```
+
+One refinement we can make is to add a trend line to the scatter plot. A trend line means fitting a line that follows the data points.
+In ggplot, trend lines are added using geom_smooth(). Setting the method argument to "lm", for "linear model" gives a trend line calculated with a linear regression. This means the trend line is a straight line that follows the data as closely as possible. 
+
+
+```{r}
+ggplot(  
+  mortgage_data,  
+  aes(pi_ratio, mortgage)) +  
+  geom_point(alpha = .5) +
+  geom_smooth(    
+    method = "lm",   
+    se = FALSE)
+```
+
+According to the estimated trend line, a P/I ratio of 0.4 is associated with an expected probability of mortgage application denial of roughly 50%. The plot indicates that there is a positive relation between the P/I ratio and the probability of a denied mortgage application so individuals with a high ratio of loan payments to income are more likely to be rejected.
+
+**Let's run a linear regression to estimate the coefficients of the model.**
+
+To run a linear regression model, you call the `lm` function.
+
+
+```{r}
+mdl_mort_vs_pi <- lm(mortgage ~ pi_ratio, data = mortgage_data)
+summary(mdl_mort_vs_pi)
+```
+
+
+On average, an applicant with a p/I ratio of zero have a very low probability of a loan denial.
+
+The coefficient for `pi_ratio` is positive and statistically different from 0, so as the P/I ratio increases, so does the probability .
+In particular, if you increase the ratio by 0.01, then the expected increase in the probability of a loan denial is $0.314\cdot 0.01= 0.00314 \approx 0.3\%$
+
+# Probit and Logit Regression
+
+The linear probability model has a major flaw: it assumes the the conditional probability function 
+
+$$\mathbb{E}(Y|X) = P(Y = 1|X) = \beta_0 + \beta_1 X$$
+to be linear. This does not restict $P(Y = 1|X)$ to lie between 0 and 1. 
+Indeed, from our application we noted that with a P/I ratio close to 0, the predicted probability of denial is negative so the model has **no meaningful interpretation**.
+
+This issue calls for an approach that uses a nonlinear function to model the conditional probability function of our binary variable.
+Commonly used methods are Probit and Logit regression.
+
+## Probit Regression
+
+In **Probit regression**, the cumulative standard normal distribution function $\Phi(\cdot)$ is used to model the regression function:
+
+$$P(Y = 1|X) = \Phi(\beta_0 + \beta_1 X)$$
+
+$\beta_0 + \beta_1 X$ plays the role of a quantile $z$.
+
+$$\Phi(z) = P(Z < x),\,\, Z \sim \mathcal{N}(0, 1)$$
+
+such that the coefficient $\beta_1$ is the change in $z$ associated with a one unit change in X.
+While the link between $z$ and Y is non linear, since $\Phi$ is a non linear function.
+
+```{r}
+ggplot(  
+  mortgage_data,  
+  aes(pi_ratio, mortgage)) +  
+  geom_point(alpha = .5) +
+  geom_smooth(    
+    method = "glm", method.args=list(family=binomial(link="probit")),   
+    se = FALSE)
+```
+
+The estimated regression function has a streched "S"-shape, it is cleary nonlinear and flattens out for large and small values of P/I ratio. The functional form also ensures that the predicted conditional probabilities of a denial lie between 0 and 1.
+
+Another helpful visualization to explore the relationship between the two variables consist in the boxplot
+
+```{r}
+ggplot(  
+  mortgage_data,  
+  aes(pi_ratio, as.factor(mortgage))) +  
+  geom_boxplot()
+```
+
+Probit models can be estimated using the function `glm()`. Using the argument `family` we specify that we want to use a Probit link function.
+
+```{r}
+# estimate the simple probit model 
+
+mdl_probit <- glm(mortgage ~ pi_ratio, 
+                  data = mortgage_data, 
+                  family = binomial(link = "probit"))
+summary(mdl_probit)
+```
+
+Just as in the linear probability model we find that the relation between the probability of denial and the P/I ratio is positive and that the corresponding coefficient is highly significant.
+
+$\beta_1$ does not have a simple interpretation. An idea is to calculate the estimated effect on Y associated with a change in X, for one or more values of X.
+
+We use `predict()` to compute the predicted change in the denial probability when P/I ratio is increased from 0.4 to 0.5.
+
+```{r}
+predictions <- predict(mdl_probit,
+  newdata = data.frame("pi_ratio" = c(0.4, 0.5)), type = "response"
+)
+
+diff(predictions)
+
+```
+
+We find that an increase in P/I ratio from 0.4 to 0.5 is predicted to increase the probability of denial by approximately 39.5%.
+
+## Logit Regression
+
+In **Logit regression**, the standard cumulative logistic distribution function $F(x) = \frac{1}{1 + e^{-x}}$ is used to model the regression function:
+
+$$P(Y = 1|X) = F(\beta_0 + \beta_1 X)=\frac{1}{1+ e^{-(\beta_0 + \beta_1 X)}}$$
+
+```{r}
+ggplot(  
+  mortgage_data,  
+  aes(pi_ratio, mortgage)) +  
+  geom_point(alpha = .5) +
+  geom_smooth(    
+    method = "glm", method.args=list(family=binomial(link = "logit")),   
+    se = FALSE) +
+  geom_smooth(    
+    method = "glm", method.args=list(family=binomial(link = "probit")),   
+    se = FALSE, linetype = 2)
+```
+
+The estimated regression functions has a very similar stretched "S"-shape.
+
+Logit models can be estimated using the function `glm()`. Using the argument `family` we specify that we want to use a Logit link function.
+
+```{r}
+# estimate the simple probit model 
+
+mdl_logit <- glm(mortgage ~ pi_ratio, 
+                  data = mortgage_data, 
+                  family = binomial(link = "logit"))
+summary(mdl_logit)
+```
+
+Both models produce very similar estimates of the probability that a mortgage application will be denied depending on the applicants P/I ratio.
+
+$\beta_1$ does not have a simple interpretation. Let's calculate the estimated effect on Y associated with a change in X, for one or more values of X.
+
+We use `predict()` to compute the predicted change in the denial probability when P/I ratio is increased from 0.4 to 0.5.
+
+```{r}
+predictions <- predict(mdl_logit,
+  newdata = data.frame("pi_ratio" = c(0.4, 0.5)), type = "response"
+)
+
+diff(predictions)
+
+```
+
+We find that an increase in P/I ratio from 0.4 to 0.5 is predicted to increase the probability of denial by approximately 39.8%.
+
+A commonly used approch to interpret the coefficients of a logistic regression model
+is to define the logit function
+
+$$logit(P(Y = 1|X)) = log(\frac{P(Y = 1|X)}{1-P(Y = 1|X)}) = \beta_0 + \beta_1 X$$
+
+The logit (i.e., the logarithm of the odds) is equivalent to the linear regression expression.
+
+
+$$odds = \frac{P(Y = 1|X)}{1-P(Y = 1|X)} = e^{\beta_0 + \beta_1 X}$$
+
+For a continuous independent variable the odds ratio can be defined as:
+
+$$OR = \frac{odds(X + 1)}{odds(X)} = \frac{e^{\beta_0 + \beta_1 (X+1)}}{e^{\beta_0 + \beta_1 X}} = e^{\beta_1}$$
+
+This exponential relationship provides an interpretation for $\beta_1$: The odds multiply by $e^{\beta_1}$ for every 1-unit increase in X.
+
+If you want to interpret the effect of a smaller change in the predictor variable (e.g., a 0.01 unit increase in X) on the odds of the outcome, you can adjust the coefficient accordingly. 
+
+In logistic regression, the interpretation of the coefficient remains the same, but you scale it based on the desired increment in the predictor variable.
+
+Here's how you can interpret the effect of a 0.01 unit increase in X:
+
+1. Obtain the odds ratio associated with a one-unit increase in X by exponentiating the coefficient \( \beta_1 \).
+2. Raise the odds ratio to the power of 0.01 to account for the smaller increment.
+
+Mathematically, the adjusted odds ratio for a 0.01 unit increase in X is:
+
+\[ e^{\beta_1 \times 0.01} \]
+
+In our example:
+
+```{r}
+exp(mdl_logit$coefficients[2] * 0.01)
+```
+
+- If the odds ratio is greater than 1 (as in this case), it indicates that the predictor variable has a positive effect on the odds of the outcome.
+- An odds ratio of 1.229 suggests that for every one-unit increase in the predictor variable, the odds of the outcome increase by a factor of 1.229.
+- For example, if the odds ratio represents the effect of the P/I ratio on mortgage approval, an odds ratio of 1.229 means that for every 0.001 increase in the P/I ratio, the odds of mortgage denial increase by approximately 22.9%.
+

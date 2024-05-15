@@ -24,6 +24,8 @@ To provide an answer you need to understand how X relates with Y, on average, ac
 
 ## Simple linear regression model
 
+### Continuous Y
+
 We are interested in the relationship between `mortgage` and `pi_ratio`, a regressor that ought to have power in explaining whether a mortgage application has been denied. It is straight forward to translate this into the simple regression model. 
 
 $$\mathbb{E}(mortgage|pi\_ratio) = P(Y = 1|pi\_ratio) =\beta_0 + \beta_{pi\_ratio}\times pi\_ratio$$
@@ -211,7 +213,7 @@ The estimated regression functions has a very similar stretched "S"-shape.
 Logit models can be estimated using the function `glm()`. Using the argument `family` we specify that we want to use a Logit link function.
 
 ```{r}
-# estimate the simple probit model 
+# estimate the simple logit model 
 
 mdl_logit <- glm(mortgage ~ pi_ratio, 
                   data = mortgage_data, 
@@ -274,4 +276,109 @@ exp(mdl_logit$coefficients[2] * 0.01)
 - If the odds ratio is greater than 1 (as in this case), it indicates that the predictor variable has a positive effect on the odds of the outcome.
 - An odds ratio of 1.229 suggests that for every one-unit increase in the predictor variable, the odds of the outcome increase by a factor of 1.229.
 - For example, if the odds ratio represents the effect of the P/I ratio on mortgage approval, an odds ratio of 1.229 means that for every 0.001 increase in the P/I ratio, the odds of mortgage denial increase by approximately 22.9%.
+
+
+### Binary Y
+
+```{r}
+library(AER)
+data(HMDA)
+
+?HMDA
+```
+
+
+We want to assess if there is racial discrimination in the mortgage market.
+Let's evaluate the association between mortgage denial and ... 
+
+```{r}
+table(HMDA$deny, ...)
+```
+
+Binary variables can either be treated as numerical, usually dummy 0/1 variables, or as factors. It does not make any difference in terms of the results obtained from the model but we have to be aware of how they are coded for a correct interpretation of the model.    
+    
+In general, the model will always have 1 parameter for a binary variable. However, we have to choose which level the parameter should represent by deciding which group to code with 1. The choice should be made according to how we want the model to be interpreted. For example, for the treatment variable, 0 is usually the placebo or the control treatment and 1 is usually the experimental treatment. Alternatively, in the case of the explanatory variables, we could simply use a statistical criteria: for a better stability of the model it is always better to use the most frequent category as a reference.    
+    
+For example, it makes more sense to consider as the reference level of `deny` subjects who have had a mortgage denial. This will help with the interpretation of the results. Therefore, we create a new variable `deny01`:
+
+```{r}
+HMDA$deny01 <- ifelse(HMDA$deny == "yes", 1, 0)
+
+```
+
+
+The odds is:
+\[ \text{Odds}(Y|X) = \frac{P(Y|X)}{1 - P(Y|X)} = \frac{\frac{e^{\beta_0 + \beta_1 X}}{1 + e^{\beta_0 + \beta_1 X}}}{\frac{1}{1 + e^{\beta_0 + \beta_1 X}}} =  e^{\beta_0 + \beta_1 X} \]
+
+
+$$Odds(Y|X = 1) = \exp^{\beta_0 + \beta_1}, \,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,Odds(Y|X = 0) = \exp^{\beta_0}$$
+    
+
+$$OR = \frac{Odds(Y|X = 1)}{Odds(Y|X = 0)}=\frac{\exp^{\beta_0 + \beta_1}}{\exp^{\beta_0}}=\exp^{\beta_1}$$
+
+$$ln(OR) = \beta_1$$
+
+### Categorical Y with K levels
+
+Before starting to fit any regression model we have to properly code categorical variables.
+This is usually done in the initial data analysis and the descriptive statistics phase.
+
+The first step consists in identifying which variables are categorical. This may seem as an easy step but it isn’t always. If fact the choice for some variables (i.e. indexes and scales) is not obvious and it requires either knowledge of the data we are analysing or a bit more effort on the data modelling.
+
+We must transform the variable into a factor, assign labels to the factor levels and choose a reference level. The reference level will be the group all the others levels will be compared to. In fact when a factor variable with K levels is added to a model, R internally transforms it in K-1 dummy variables and a model parameter will be estimated for each of them. Again, is important we choose the reference level. In this case we have `unemp` which we have to transform into a factor
+
+```{r}
+summary(HMDA$unemp)
+HMDA_Q <- round(quantile(HMDA$unemp, probs = c(0.33, .66)), 2)
+
+HMDA$unemp_cat <- as.factor(ifelse(HMDA$unemp < HMDA_Q[1], paste("<", HMDA_Q[1]),
+                     ifelse(HMDA$unemp > HMDA_Q[2], paste(">", HMDA_Q[2]),
+                                                           paste(HMDA_Q[1],"-", HMDA_Q[2]))))
+
+```
+
+We can now check how R has coded the variable:
+
+```{r}
+str(HMDA$unemp_cat)
+contrasts(HMDA$unemp_cat)
+```
+
+
+|                 | D1 | D2 |
+|-----------------|----|----|
+| $< 3.2$ | 0  | 0  |
+| $> 3.6$ | 1  | 0  |
+| $3.2-3.6$ | 0  | 1  |
+
+
+By default, R uses the group 1 as the reference level. With the `contrasts()` function we can see how the variable will be parametrized in the regression model. In the rows we have the variable levels and on the columns the parameters generated for this variable.
+
+$\text{Odds}(Y|X = < 3.2) = e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)} $
+
+$\text{Odds}(Y|X = 3.2-3.6) = e^{\beta_0 + \beta_1 (D1 = 1) + \beta_2 (D2 = 0)} $
+
+$\text{Odds}(Y|X = > 3.6) = e^{\beta_0 + \beta_1 (D1 =01) + \beta_2 (D2 = 1)} $
+
+
+$\text{OR} = \frac{\text{Odds}(Y|X = 50-59)}{\text{Odds}(Y|X = < 50)} = \frac{e^{\beta_0 + \beta_1 (D1 = 1) + \beta_2 (D2 = 0)}}{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)}} = \frac{e^{\beta_0 + \beta_1}}{e^{\beta_0}}$
+
+
+$\text{OR} = \frac{\text{Odds}(Y|X = 60+)}{\text{Odds}(Y|X = < 50)} = \frac{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 1)}}{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)}} = \frac{e^{\beta_0 + \beta_2}}{e^{\beta_0}}$
+
+Last but not least we can set the reference category of our choice. In this case we choose “3.2 - 3.6” which is the most frequent category.
+
+```{r}
+table(HMDA$unemp_cat)
+```
+
+
+```{r}
+HMDA$unemp_cat <- relevel(HMDA$unemp_cat, ref="3.2 - 3.6")
+
+contrasts(HMDA$unemp_cat)
+```
+
+If the variable is of type character the steps are similar to the previous ones with the exception that we won’t need to explicitly set the labels. As a reminder, by default R uses as a reference level the first level in alphabetical order.
+
 

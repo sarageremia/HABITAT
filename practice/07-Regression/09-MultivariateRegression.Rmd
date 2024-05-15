@@ -1,0 +1,171 @@
+---
+title: "Multivariate regression with R"
+author: "Sara Geremia"
+date: "2024-05-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, 
+                      error = FALSE, message = FALSE)
+
+library(tidyverse)
+library(knitr)
+```
+
+Although districts with a high number of of convenience stores within walking distance tend to have higher priced houses in the Taiwan real estate data set, 
+perhaps houses from districts with a high number of stores have other advantages that induce an increasing in the house prices. Could this have produced a misleading 
+estimate of the causal effect of number of stores on house prices, and, if so, what can be done?
+
+Omitted factors, such as district characteristics, can, in fact, make the
+least squares estimator of the effect of number of stores on house prices misleading or, 
+more precisely, biased.
+
+## Multivariate linear regression model
+
+We introduce the **multivariate linear regression model**, which include omitted factors as 
+additional independens variables (X's). Hence, we can estimate the effect of one regressor
+(number of convenienve stores) while holding constant the other variables.
+
+Alternatively, if one is interested not in causal inference but in prediction, the 
+multiple regression model makes it possible to use multiple variables as regressors (predictors) to improve upon predictions made using a single regressor.
+
+
+The relation established between the X's and Y is a linear relationship. 
+It's important to note that in linear regression, the response variable must be numeric. If the response variable is binary (taking TRUE/FALSE values), logistic regression is conducted. multivariate linear or logistic regression models incorporate multiple explanatory variables.
+
+Datasets usually contain many variables collected during a study. 
+
+```{r}
+taiwan_real_estate <- fst::read.fst("practice/07-Regression/taiwan_real_estate.fst")
+
+head(taiwan_real_estate)
+```
+
+
+```{r echo=FALSE}
+matrix(c("dist_to_mrt_m",	"Distance to nearest MRT metro station, in meters", "n_convenience","	No. of convenience stores in walking distance", 
+"house_age_years",	"The age of the house, in years, in 3 groups",
+"price_twd_msq",	"House price per unit area, in New Taiwan dollars per meter squared"), 4, 2, byrow = TRUE) %>% 
+  kable(col.names = c("Variable", "Meaning"))
+```
+
+Let's start from the simple linear regression model we fitted last time:
+
+$$\mathbb{E}(price\_twd\_msq|n\_convenience) = \beta_0 + \beta_{n\_convenience}\times n\_convenience$$
+
+
+```{r}
+mdl_price_vs_nconv <- lm(price_twd_msq ~ n_convenience, data = taiwan_real_estate)
+summary(mdl_price_vs_nconv)
+```
+
+We augment the simple model by an additional regressor `house_age_years`, which is the 
+age of each house splitted in three groups. If the young age of a house has a significant
+influence on the increase of house prices, we need to control for this factor to allow for 
+an objective assessment of the district house prices. 
+
+```{r}
+taiwan_real_estate$house_age_years <- factor(taiwan_real_estate$house_age_years, ordered = FALSE)
+
+contrasts(taiwan_real_estate$house_age_years)
+```
+
+
+
+```{r}
+mdl_price_mlt1 <- lm(price_twd_msq ~ n_convenience + house_age_years, data = taiwan_real_estate)
+summary(mdl_price_mlt1)
+```
+
+The estimated regression function is:
+
+
+$$\mathbb{E}(price\_twd\_msq|n\_convenience, house\_age) = \beta_0 + \beta_{n\_convenience}\times n\_convenience + \beta_{house\_age}\times house\_age$$
+
+The coefficient on the middle aged and old houses `house_age_years.L` are negative
+and significantly different from zero at the \(0.01\%\) level.
+The interpretation is that, holding the \(P/I \ ratio\) constant, if a house falls within the age range of 30 to 45 years, the price is expected to decrease by approximately 1.9 units compared to the reference category, holding all other variables constant.
+
+## Multivariate logistic regression model
+
+Let's start from the simple logistic regression model we fitted last time:
+
+$$P(Y = 1|pi\_ratio) = F(\beta_0 + \beta_{pi\_ratio}\times pi\_ratio$$
+
+```{r}
+library(AER)
+data(HMDA)
+
+HMDA$deny <- ifelse(HMDA$deny == "yes", 1, 0)
+
+```
+
+```{r}
+# estimate the simple logit model 
+
+mdl_logit <- glm(deny ~ pirat, 
+                  data = HMDA, 
+                  family = binomial(link = "logit"))
+summary(mdl_logit)
+```
+
+We augment the simple model by an additional regressor \(afam\) which equals \(1\) if the applicant is an African American and equals \(0\) otherwise. Such a specification is the baseline for investigating if there is racial discrimination in the mortgage market: if being black has a significant (positive) influence on the probability of a loan denial when we control for factors that allow for an objective assessment of an applicant’s creditworthiness, this is an indicator for discrimination.
+
+$$P(Y = 1|pi\_ratio, afam) = F(\beta_0 + \beta_{pi\_ratio}\times pi\_ratio + \beta\_afam\times X\_afam$$
+
+```{r}
+
+HMDA$afam <- ifelse(HMDA$afam == "yes", 1, 0)
+
+```
+
+```{r}
+mdl_logit_mlt1 <- glm(deny ~ pirat + afam, 
+                      data = HMDA,
+                      family = binomial(link = "logit"))
+summary(mdl_logit_mlt1)
+```
+
+The coefficient on `afam` is positive and significantly different from zero at the \(0.01\%\) level. The interpretation is that, holding the \(P/I \ ratio\) constant, being black increases the probability of a mortgage application denial by about \(27.3\%\). This finding is compatible with racial discrimination. However, it might be distorted by omitted variable bias so discrimination could be a premature conclusion.
+
+
+## Stepwise Regression
+
+The stepwise regression consists of iteratively adding and removing predictors, in the predictive model, in order to find the subset of variables in the data set resulting in the best performing model, that is a model that lowers prediction error.
+
+*Forward selection*
+
+```{r}
+# Initialize an empty model
+forward_model <- glm(deny ~ ., data = HMDA, family = binomial(link = "logit"))
+summary(forward_model)
+
+# Forward stepwise regression
+forward_model <- step(forward_model, direction = "forward", scope = formula(~ .))
+summary(forward_model)
+```
+
+
+*Backward selection*
+
+```{r}
+# Initialize a model with all predictors
+backward_model <- glm(deny ~ ., data = HMDA, family = binomial(link = "logit"))
+
+# Backward stepwise regression
+backward_model <- step(backward_model, direction = "backward")
+summary(backward_model)
+```
+
+*Stepwise selection*
+
+```{r}
+# Initialize a model with all predictors
+stepwise_model <- glm(deny ~ ., data = HMDA, family = binomial(link = "logit"))
+
+# Stepwise stepwise regression
+stepwise_model <- step(stepwise_model, direction = "both")
+summary(stepwise_model)
+```
+

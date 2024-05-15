@@ -292,7 +292,7 @@ We want to assess if there is racial discrimination in the mortgage market.
 Let's evaluate the association between mortgage denial and ... 
 
 ```{r}
-table(HMDA$deny, ...)
+#table(HMDA$deny, ...)
 ```
 
 Binary variables can either be treated as numerical, usually dummy 0/1 variables, or as factors. It does not make any difference in terms of the results obtained from the model but we have to be aware of how they are coded for a correct interpretation of the model.    

@@ -376,6 +376,8 @@ likelihood of mortgage denial based on the P/I ratio.</p>
 </div>
 <div id="simple-linear-regression-model" class="section level2">
 <h2>Simple linear regression model</h2>
+<div id="continuous-y" class="section level3">
+<h3>Continuous Y</h3>
 <p>We are interested in the relationship between <code>mortgage</code>
 and <code>pi_ratio</code>, a regressor that ought to have power in
 explaining whether a mortgage application has been denied. It is
@@ -498,6 +500,7 @@ the probability . In particular, if you increase the ratio by 0.01, then
 the expected increase in the probability of a loan denial is <span class="math inline">\(0.314\cdot 0.01= 0.00314 \approx
 0.3\%\)</span></p>
 </div>
+</div>
 <div id="probit-and-logit-regression" class="section level1">
 <h1>Probit and Logit Regression</h1>
 <p>The linear probability model has a major flaw: it assumes the the
@@ -614,7 +617,7 @@ X)=\frac{1}{1+ e^{-(\beta_0 + \beta_1 X)}}\]</span></p>
 <p>Logit models can be estimated using the function <code>glm()</code>.
 Using the argument <code>family</code> we specify that we want to use a
 Logit link function.</p>
-<pre class="r"><code># estimate the simple probit model 
+<pre class="r"><code># estimate the simple logit model 
 
 mdl_logit &lt;- glm(mortgage ~ pi_ratio, 
                   data = mortgage_data, 
@@ -704,6 +707,140 @@ ratio on mortgage approval, an odds ratio of 1.229 means that for every
 0.001 increase in the P/I ratio, the odds of mortgage denial increase by
 approximately 22.9%.</li>
 </ul>
+<div id="binary-y" class="section level3">
+<h3>Binary Y</h3>
+<pre class="r"><code>library(AER)
+data(HMDA)
+
+?HMDA</code></pre>
+<p>We want to assess if there is racial discrimination in the mortgage
+market. Let’s evaluate the association between mortgage denial and …</p>
+<pre class="r"><code>#table(HMDA$deny, ...)</code></pre>
+<p>Binary variables can either be treated as numerical, usually dummy
+0/1 variables, or as factors. It does not make any difference in terms
+of the results obtained from the model but we have to be aware of how
+they are coded for a correct interpretation of the model.</p>
+<p>In general, the model will always have 1 parameter for a binary
+variable. However, we have to choose which level the parameter should
+represent by deciding which group to code with 1. The choice should be
+made according to how we want the model to be interpreted. For example,
+for the treatment variable, 0 is usually the placebo or the control
+treatment and 1 is usually the experimental treatment. Alternatively, in
+the case of the explanatory variables, we could simply use a statistical
+criteria: for a better stability of the model it is always better to use
+the most frequent category as a reference.</p>
+<p>For example, it makes more sense to consider as the reference level
+of <code>deny</code> subjects who have had a mortgage denial. This will
+help with the interpretation of the results. Therefore, we create a new
+variable <code>deny01</code>:</p>
+<pre class="r"><code>HMDA$deny01 &lt;- ifelse(HMDA$deny == &quot;yes&quot;, 1, 0)</code></pre>
+<p>The odds is: <span class="math display">\[ \text{Odds}(Y|X) =
+\frac{P(Y|X)}{1 - P(Y|X)} = \frac{\frac{e^{\beta_0 + \beta_1 X}}{1 +
+e^{\beta_0 + \beta_1 X}}}{\frac{1}{1 + e^{\beta_0 + \beta_1 X}}}
+=  e^{\beta_0 + \beta_1 X} \]</span></p>
+<p><span class="math display">\[Odds(Y|X = 1) = \exp^{\beta_0 +
+\beta_1}, \,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,Odds(Y|X = 0) =
+\exp^{\beta_0}\]</span></p>
+<p><span class="math display">\[OR = \frac{Odds(Y|X = 1)}{Odds(Y|X =
+0)}=\frac{\exp^{\beta_0 +
+\beta_1}}{\exp^{\beta_0}}=\exp^{\beta_1}\]</span></p>
+<p><span class="math display">\[ln(OR) = \beta_1\]</span></p>
+</div>
+<div id="categorical-y-with-k-levels" class="section level3">
+<h3>Categorical Y with K levels</h3>
+<p>Before starting to fit any regression model we have to properly code
+categorical variables. This is usually done in the initial data analysis
+and the descriptive statistics phase.</p>
+<p>The first step consists in identifying which variables are
+categorical. This may seem as an easy step but it isn’t always. If fact
+the choice for some variables (i.e. indexes and scales) is not obvious
+and it requires either knowledge of the data we are analysing or a bit
+more effort on the data modelling.</p>
+<p>We must transform the variable into a factor, assign labels to the
+factor levels and choose a reference level. The reference level will be
+the group all the others levels will be compared to. In fact when a
+factor variable with K levels is added to a model, R internally
+transforms it in K-1 dummy variables and a model parameter will be
+estimated for each of them. Again, is important we choose the reference
+level. In this case we have <code>unemp</code> which we have to
+transform into a factor</p>
+<pre class="r"><code>summary(HMDA$unemp)</code></pre>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   1.800   3.100   3.200   3.774   3.900  10.600</code></pre>
+<pre class="r"><code>HMDA_Q &lt;- round(quantile(HMDA$unemp, probs = c(0.33, .66)), 2)
+
+HMDA$unemp_cat &lt;- as.factor(ifelse(HMDA$unemp &lt; HMDA_Q[1], paste(&quot;&lt;&quot;, HMDA_Q[1]),
+                     ifelse(HMDA$unemp &gt; HMDA_Q[2], paste(&quot;&gt;&quot;, HMDA_Q[2]),
+                                                           paste(HMDA_Q[1],&quot;-&quot;, HMDA_Q[2]))))</code></pre>
+<p>We can now check how R has coded the variable:</p>
+<pre class="r"><code>str(HMDA$unemp_cat)</code></pre>
+<pre><code>##  Factor w/ 3 levels &quot;&lt; 3.2&quot;,&quot;&gt; 3.6&quot;,..: 2 3 3 2 3 2 2 1 1 2 ...</code></pre>
+<pre class="r"><code>contrasts(HMDA$unemp_cat)</code></pre>
+<pre><code>##           &gt; 3.6 3.2 - 3.6
+## &lt; 3.2         0         0
+## &gt; 3.6         1         0
+## 3.2 - 3.6     0         1</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>D1</th>
+<th>D2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(&lt; 3.2\)</span></td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(&gt; 3.6\)</span></td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(3.2-3.6\)</span></td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>By default, R uses the group 1 as the reference level. With the
+<code>contrasts()</code> function we can see how the variable will be
+parametrized in the regression model. In the rows we have the variable
+levels and on the columns the parameters generated for this
+variable.</p>
+<p>$(Y|X = &lt; 3.2) = e^{_0 + _1 (D1 = 0) + _2 (D2 = 0)} $</p>
+<p>$(Y|X = 3.2-3.6) = e^{_0 + _1 (D1 = 1) + _2 (D2 = 0)} $</p>
+<p>$(Y|X = &gt; 3.6) = e^{_0 + _1 (D1 =01) + _2 (D2 = 1)} $</p>
+<p><span class="math inline">\(\text{OR} = \frac{\text{Odds}(Y|X =
+50-59)}{\text{Odds}(Y|X = &lt; 50)} = \frac{e^{\beta_0 + \beta_1 (D1 =
+1) + \beta_2 (D2 = 0)}}{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 =
+0)}} = \frac{e^{\beta_0 + \beta_1}}{e^{\beta_0}}\)</span></p>
+<p><span class="math inline">\(\text{OR} = \frac{\text{Odds}(Y|X =
+60+)}{\text{Odds}(Y|X = &lt; 50)} = \frac{e^{\beta_0 + \beta_1 (D1 = 0)
++ \beta_2 (D2 = 1)}}{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)}}
+= \frac{e^{\beta_0 + \beta_2}}{e^{\beta_0}}\)</span></p>
+<p>Last but not least we can set the reference category of our choice.
+In this case we choose “3.2 - 3.6” which is the most frequent
+category.</p>
+<pre class="r"><code>table(HMDA$unemp_cat)</code></pre>
+<pre><code>## 
+##     &lt; 3.2     &gt; 3.6 3.2 - 3.6 
+##       640       689      1051</code></pre>
+<pre class="r"><code>HMDA$unemp_cat &lt;- relevel(HMDA$unemp_cat, ref=&quot;3.2 - 3.6&quot;)
+
+contrasts(HMDA$unemp_cat)</code></pre>
+<pre><code>##           &lt; 3.2 &gt; 3.6
+## 3.2 - 3.6     0     0
+## &lt; 3.2         1     0
+## &gt; 3.6         0     1</code></pre>
+<p>If the variable is of type character the steps are similar to the
+previous ones with the exception that we won’t need to explicitly set
+the labels. As a reminder, by default R uses as a reference level the
+first level in alphabetical order.</p>
+</div>
 </div>
 </div>
 

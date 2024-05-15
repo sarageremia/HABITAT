@@ -489,21 +489,19 @@ summary(mdl_price_mlt1)</code></pre>
 <p><span class="math display">\[\mathbb{E}(price\_twd\_msq|n\_convenience,
 house\_age) = \beta_0 + \beta_{n\_convenience}\times n\_convenience +
 \beta_{house\_age}\times house\_age\]</span></p>
-<p>The coefficient on the middle aged and old houses
-<code>house_age_years.L</code> are negative and significantly different
-from zero at the <span class="math inline">\(0.01\%\)</span> level. The
-interpretation is that, holding the <span class="math inline">\(P/I \
-ratio\)</span> constant, if a house falls within the age range of 30 to
-45 years, the price is expected to decrease by approximately 1.9 units
-compared to the reference category, holding all other variables
-constant.</p>
+<p>The coefficient on the middle aged and old houses are negative and
+significantly different from zero at the <span class="math inline">\(0.01\%\)</span> level. The interpretation is that,
+holding the <span class="math inline">\(P/I \ ratio\)</span> constant,
+if a house falls within the age range of 30 to 45 years, the price is
+expected to decrease by approximately 1.9 units compared to the
+reference category, holding all other variables constant.</p>
 </div>
 <div id="multivariate-logistic-regression-model" class="section level2">
 <h2>Multivariate logistic regression model</h2>
 <p>Let’s start from the simple logistic regression model we fitted last
 time:</p>
 <p><span class="math display">\[P(Y = 1|pi\_ratio) = F(\beta_0 +
-\beta_{pi\_ratio}\times pi\_ratio\]</span></p>
+\beta_{pi\_ratio}\times pi\_ratio)\]</span></p>
 <pre class="r"><code>library(AER)
 data(HMDA)
 
@@ -542,7 +540,7 @@ for factors that allow for an objective assessment of an applicant’s
 creditworthiness, this is an indicator for discrimination.</p>
 <p><span class="math display">\[P(Y = 1|pi\_ratio, afam) = F(\beta_0 +
 \beta_{pi\_ratio}\times pi\_ratio + \beta\_afam\times
-X\_afam\]</span></p>
+X\_afam)\]</span></p>
 <pre class="r"><code>HMDA$afam &lt;- ifelse(HMDA$afam == &quot;yes&quot;, 1, 0)</code></pre>
 <pre class="r"><code>mdl_logit_mlt1 &lt;- glm(deny ~ pirat + afam, 
                       data = HMDA,
@@ -582,7 +580,7 @@ variable bias so discrimination could be a premature conclusion.</p>
 predictors, in the predictive model, in order to find the subset of
 variables in the data set resulting in the best performing model, that
 is a model that lowers prediction error.</p>
-<p><em>Forward selection</em></p>
+<p><strong>Forward selection</strong></p>
 <pre class="r"><code># Initialize an empty model
 forward_model &lt;- glm(deny ~ ., data = HMDA, family = binomial(link = &quot;logit&quot;))
 summary(forward_model)</code></pre>
@@ -666,7 +664,7 @@ forward_model &lt;- step(forward_model, direction = &quot;forward&quot;, scope =
 ## AIC: 1298.4
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
-<p><em>Backward selection</em></p>
+<p><strong>Backward selection</strong></p>
 <pre class="r"><code># Initialize a model with all predictors
 backward_model &lt;- glm(deny ~ ., data = HMDA, family = binomial(link = &quot;logit&quot;))
 
@@ -779,7 +777,7 @@ backward_model &lt;- step(backward_model, direction = &quot;backward&quot;)</cod
 ## AIC: 1292
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
-<p><em>Stepwise selection</em></p>
+<p><strong>Stepwise selection</strong></p>
 <pre class="r"><code># Initialize a model with all predictors
 stepwise_model &lt;- glm(deny ~ ., data = HMDA, family = binomial(link = &quot;logit&quot;))
 

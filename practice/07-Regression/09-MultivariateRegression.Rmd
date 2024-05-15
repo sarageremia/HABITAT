@@ -83,7 +83,7 @@ The estimated regression function is:
 
 $$\mathbb{E}(price\_twd\_msq|n\_convenience, house\_age) = \beta_0 + \beta_{n\_convenience}\times n\_convenience + \beta_{house\_age}\times house\_age$$
 
-The coefficient on the middle aged and old houses `house_age_years.L` are negative
+The coefficient on the middle aged and old houses are negative
 and significantly different from zero at the \(0.01\%\) level.
 The interpretation is that, holding the \(P/I \ ratio\) constant, if a house falls within the age range of 30 to 45 years, the price is expected to decrease by approximately 1.9 units compared to the reference category, holding all other variables constant.
 
@@ -91,7 +91,7 @@ The interpretation is that, holding the \(P/I \ ratio\) constant, if a house fal
 
 Let's start from the simple logistic regression model we fitted last time:
 
-$$P(Y = 1|pi\_ratio) = F(\beta_0 + \beta_{pi\_ratio}\times pi\_ratio$$
+$$P(Y = 1|pi\_ratio) = F(\beta_0 + \beta_{pi\_ratio}\times pi\_ratio)$$
 
 ```{r}
 library(AER)
@@ -112,7 +112,7 @@ summary(mdl_logit)
 
 We augment the simple model by an additional regressor \(afam\) which equals \(1\) if the applicant is an African American and equals \(0\) otherwise. Such a specification is the baseline for investigating if there is racial discrimination in the mortgage market: if being black has a significant (positive) influence on the probability of a loan denial when we control for factors that allow for an objective assessment of an applicant’s creditworthiness, this is an indicator for discrimination.
 
-$$P(Y = 1|pi\_ratio, afam) = F(\beta_0 + \beta_{pi\_ratio}\times pi\_ratio + \beta\_afam\times X\_afam$$
+$$P(Y = 1|pi\_ratio, afam) = F(\beta_0 + \beta_{pi\_ratio}\times pi\_ratio + \beta\_afam\times X\_afam)$$
 
 ```{r}
 
@@ -134,7 +134,7 @@ The coefficient on `afam` is positive and significantly different from zero at t
 
 The stepwise regression consists of iteratively adding and removing predictors, in the predictive model, in order to find the subset of variables in the data set resulting in the best performing model, that is a model that lowers prediction error.
 
-*Forward selection*
+**Forward selection**
 
 ```{r}
 # Initialize an empty model
@@ -147,7 +147,7 @@ summary(forward_model)
 ```
 
 
-*Backward selection*
+**Backward selection**
 
 ```{r}
 # Initialize a model with all predictors
@@ -158,7 +158,7 @@ backward_model <- step(backward_model, direction = "backward")
 summary(backward_model)
 ```
 
-*Stepwise selection*
+**Stepwise selection**
 
 ```{r}
 # Initialize a model with all predictors

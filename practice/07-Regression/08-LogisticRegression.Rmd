@@ -79,9 +79,9 @@ In the plot, you can see that the percentage of application denial seem to incre
 
 ```{r}
 ggplot(  
-  mortgage_data,  
-  aes(pi_ratio, mortgage)) +  
-  geom_point(alpha = .5)
+  data = mortgage_data,  
+  mapping = aes(x = pi_ratio, y = mortgage)) +  
+  geom_point()
 ```
 
 One refinement we can make is to add a trend line to the scatter plot. A trend line means fitting a line that follows the data points.
@@ -93,6 +93,7 @@ ggplot(
   mortgage_data,  
   aes(pi_ratio, mortgage)) +  
   geom_point(alpha = .5) +
+  geom_vline(xintercept = 0.4, color = "red", linetype = "dotted") +
   geom_smooth(    
     method = "lm",   
     se = FALSE)
@@ -142,9 +143,10 @@ While the link between $z$ and Y is non linear, since $\Phi$ is a non linear fun
 
 ```{r}
 ggplot(  
-  mortgage_data,  
+  data = mortgage_data,  
   aes(pi_ratio, mortgage)) +  
   geom_point(alpha = .5) +
+  geom_vline(xintercept = .4, color = "red", linetype = "dotted") +
   geom_smooth(    
     method = "glm", method.args=list(family=binomial(link="probit")),   
     se = FALSE)
@@ -187,7 +189,7 @@ diff(predictions)
 
 ```
 
-We find that an increase in P/I ratio from 0.4 to 0.5 is predicted to increase the probability of denial by approximately 39.5%.
+We find that an increase in P/I ratio from 0.4 to 0.5 is predicted to increase the probability of denial by approximately 39.4%.
 
 ## Logit Regression
 
@@ -250,7 +252,7 @@ $$odds = \frac{P(Y = 1|X)}{1-P(Y = 1|X)} = e^{\beta_0 + \beta_1 X}$$
 
 For a continuous independent variable the odds ratio can be defined as:
 
-$$OR = \frac{odds(X + 1)}{odds(X)} = \frac{e^{\beta_0 + \beta_1 (X+1)}}{e^{\beta_0 + \beta_1 X}} = e^{\beta_1}$$
+$$OR = \frac{odds(Y|X + 1)}{odds(Y|X)} = \frac{e^{\beta_0 + \beta_1 (X+1)}}{e^{\beta_0 + \beta_1 X}} = e^{\beta_1}$$
 
 This exponential relationship provides an interpretation for $\beta_1$: The odds multiply by $e^{\beta_1}$ for every 1-unit increase in X.
 
@@ -275,10 +277,10 @@ exp(mdl_logit$coefficients[2] * 0.01)
 
 - If the odds ratio is greater than 1 (as in this case), it indicates that the predictor variable has a positive effect on the odds of the outcome.
 - An odds ratio of 1.229 suggests that for every one-unit increase in the predictor variable, the odds of the outcome increase by a factor of 1.229.
-- For example, if the odds ratio represents the effect of the P/I ratio on mortgage approval, an odds ratio of 1.229 means that for every 0.001 increase in the P/I ratio, the odds of mortgage denial increase by approximately 22.9%.
+- For example, if the odds ratio represents the effect of the P/I ratio on mortgage approval, an odds ratio of 1.229 means that for every 0.01 increase in the P/I ratio, the odds of mortgage denial increase by approximately 22.9%.
 
 
-### Binary Y
+### Binary X
 
 ```{r}
 library(AER)
@@ -318,7 +320,7 @@ $$OR = \frac{Odds(Y|X = 1)}{Odds(Y|X = 0)}=\frac{\exp^{\beta_0 + \beta_1}}{\exp^
 
 $$ln(OR) = \beta_1$$
 
-### Categorical Y with K levels
+### Categorical X with K levels
 
 Before starting to fit any regression model we have to properly code categorical variables.
 This is usually done in the initial data analysis and the descriptive statistics phase.
@@ -354,11 +356,11 @@ contrasts(HMDA$unemp_cat)
 
 By default, R uses the group 1 as the reference level. With the `contrasts()` function we can see how the variable will be parametrized in the regression model. In the rows we have the variable levels and on the columns the parameters generated for this variable.
 
-$\text{Odds}(Y|X = < 3.2) = e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)} $
+$\text{Odds}(Y|X = < 3.2) = e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)}$
 
-$\text{Odds}(Y|X = 3.2-3.6) = e^{\beta_0 + \beta_1 (D1 = 1) + \beta_2 (D2 = 0)} $
+$\text{Odds}(Y|X = 3.2-3.6) = e^{\beta_0 + \beta_1 (D1 = 1) + \beta_2 (D2 = 0)}$
 
-$\text{Odds}(Y|X = > 3.6) = e^{\beta_0 + \beta_1 (D1 =01) + \beta_2 (D2 = 1)} $
+$\text{Odds}(Y|X = > 3.6) = e^{\beta_0 + \beta_1 (D1 =01) + \beta_2 (D2 = 1)}$
 
 
 $\text{OR} = \frac{\text{Odds}(Y|X = 50-59)}{\text{Odds}(Y|X = < 50)} = \frac{e^{\beta_0 + \beta_1 (D1 = 1) + \beta_2 (D2 = 0)}}{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)}} = \frac{e^{\beta_0 + \beta_1}}{e^{\beta_0}}$

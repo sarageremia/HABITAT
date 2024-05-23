@@ -289,12 +289,12 @@ data(HMDA)
 ?HMDA
 ```
 
-
 We want to assess if there is racial discrimination in the mortgage market.
-Let's evaluate the association between mortgage denial and ... 
+Let's evaluate the association between mortgage denial and afam 
 
 ```{r}
-#table(HMDA$deny, ...)
+table(HMDA$deny, HMDA$afam)
+
 ```
 
 Binary variables can either be treated as numerical, usually dummy 0/1 variables, or as factors. It does not make any difference in terms of the results obtained from the model but we have to be aware of how they are coded for a correct interpretation of the model.    
@@ -305,6 +305,7 @@ For example, it makes more sense to consider as the reference level of `deny` su
 
 ```{r}
 HMDA$deny01 <- ifelse(HMDA$deny == "yes", 1, 0)
+HMDA$afam01 <- ifelse(HMDA$afam == "yes", 1, 0)
 
 ```
 
@@ -320,6 +321,20 @@ $$OR = \frac{Odds(Y|X = 1)}{Odds(Y|X = 0)}=\frac{\exp^{\beta_0 + \beta_1}}{\exp^
 
 $$ln(OR) = \beta_1$$
 
+```{r}
+mdl_logit <- glm(deny01 ~ afam01, 
+                  data = HMDA, 
+                  family = binomial(link = "logit"))
+```
+
+```{r}
+summ_log <- summary(mdl_logit)
+
+exp(summ_log$coefficients[2])
+```
+
+
+
 ### Categorical X with K levels
 
 Before starting to fit any regression model we have to properly code categorical variables.
@@ -327,31 +342,31 @@ This is usually done in the initial data analysis and the descriptive statistics
 
 The first step consists in identifying which variables are categorical. This may seem as an easy step but it isn’t always. If fact the choice for some variables (i.e. indexes and scales) is not obvious and it requires either knowledge of the data we are analysing or a bit more effort on the data modelling.
 
-We must transform the variable into a factor, assign labels to the factor levels and choose a reference level. The reference level will be the group all the others levels will be compared to. In fact when a factor variable with K levels is added to a model, R internally transforms it in K-1 dummy variables and a model parameter will be estimated for each of them. Again, is important we choose the reference level. In this case we have `unemp` which we have to transform into a factor
+We must transform the variable into a factor, assign labels to the factor levels and choose a reference level. The reference level will be the group all the others levels will be compared to. In fact when a factor variable with K levels is added to a model, R internally transforms it in K-1 dummy variables and a model parameter will be estimated for each of them. Again, is important we choose the reference level. In this case we have `lvrat` which we have to transform into a factor
 
 ```{r}
-summary(HMDA$unemp)
-HMDA_Q <- round(quantile(HMDA$unemp, probs = c(0.33, .66)), 2)
+summary(HMDA$lvrat)
+HMDA_Q <- round(quantile(HMDA$lvrat, probs = c(0.33, .66)), 2)
 
-HMDA$unemp_cat <- as.factor(ifelse(HMDA$unemp < HMDA_Q[1], paste("<", HMDA_Q[1]),
-                     ifelse(HMDA$unemp > HMDA_Q[2], paste(">", HMDA_Q[2]),
-                                                           paste(HMDA_Q[1],"-", HMDA_Q[2]))))
+HMDA$lvrat_cat <- as.factor(ifelse(HMDA$lvrat < HMDA_Q[1], paste("<", HMDA_Q[1]), 
+                     ifelse(HMDA$lvrat > HMDA_Q[2], paste(">", HMDA_Q[2]),
+                                                           paste(HMDA_Q[1], "-", HMDA_Q[2]))))
 
 ```
 
 We can now check how R has coded the variable:
 
 ```{r}
-str(HMDA$unemp_cat)
-contrasts(HMDA$unemp_cat)
+str(HMDA$lvrat_cat)
+contrasts(HMDA$lvrat_cat)
 ```
 
 
 |                 | D1 | D2 |
 |-----------------|----|----|
-| $< 3.2$ | 0  | 0  |
-| $> 3.6$ | 1  | 0  |
-| $3.2-3.6$ | 0  | 1  |
+| $< 0.71$ | 0  | 0  |
+| $> 0.8$ | 1  | 0  |
+| $0.71-0.8$ | 0  | 1  |
 
 
 By default, R uses the group 1 as the reference level. With the `contrasts()` function we can see how the variable will be parametrized in the regression model. In the rows we have the variable levels and on the columns the parameters generated for this variable.
@@ -368,19 +383,42 @@ $\text{OR} = \frac{\text{Odds}(Y|X = 50-59)}{\text{Odds}(Y|X = < 50)} = \frac{e^
 
 $\text{OR} = \frac{\text{Odds}(Y|X = 60+)}{\text{Odds}(Y|X = < 50)} = \frac{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 1)}}{e^{\beta_0 + \beta_1 (D1 = 0) + \beta_2 (D2 = 0)}} = \frac{e^{\beta_0 + \beta_2}}{e^{\beta_0}}$
 
-Last but not least we can set the reference category of our choice. In this case we choose “3.2 - 3.6” which is the most frequent category.
+```{r}
+mdl_logit2 <- glm(deny01 ~ lvrat_cat, 
+                  data = HMDA, 
+                  family = binomial(link = "logit"))
+summary(mdl_logit2)
+```
 
 ```{r}
-table(HMDA$unemp_cat)
+exp(1.1545)
+exp(0.3015)
+```
+
+Last but not least we can set the reference category of our choice. In this case we choose “> 0.8” which is the most frequent category.
+
+```{r}
+table(HMDA$lvrat_cat)
 ```
 
 
 ```{r}
-HMDA$unemp_cat <- relevel(HMDA$unemp_cat, ref="3.2 - 3.6")
+HMDA$lvrat_cat <- relevel(HMDA$lvrat_cat, ref="> 0.8")
 
-contrasts(HMDA$unemp_cat)
+contrasts(HMDA$lvrat_cat)
 ```
 
 If the variable is of type character the steps are similar to the previous ones with the exception that we won’t need to explicitly set the labels. As a reminder, by default R uses as a reference level the first level in alphabetical order.
 
+
+```{r}
+mdl_logit2 <- glm(deny01 ~ lvrat_cat, 
+                  data = HMDA, 
+                  family = binomial(link = "logit"))
+summary(mdl_logit2)
+```
+
+```{r}
+exp(-1.15446)
+```
 

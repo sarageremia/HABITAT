@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
                       error = FALSE, message = FALSE)
 
 ```
+
 Let's work with dates and times in R.
 
 # Time Series
@@ -134,7 +135,8 @@ ggplot() +
  Based on your plot, it seems that simple data imputation using the mean is not a great method to approximate what's really going on in the flights data.
  
 
- ## Create Time Series
+## Create Time Series
+
  
 Given a vector of numbers you can apply the ts() function to create a time series object. Such objects are of the `ts` class. They represent data that is at least approximately evenly spaced over time.
  

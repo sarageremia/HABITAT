@@ -378,9 +378,9 @@ zones.</p>
 <p>To get the current date or date-time you can use <code>today()</code>
 or <code>now()</code>:</p>
 <pre class="r"><code>today()</code></pre>
-<pre><code>## [1] &quot;2024-05-23&quot;</code></pre>
+<pre><code>## [1] &quot;2024-05-24&quot;</code></pre>
 <pre class="r"><code>now()</code></pre>
-<pre><code>## [1] &quot;2024-05-23 18:23:40 CEST&quot;</code></pre>
+<pre><code>## [1] &quot;2024-05-24 09:09:40 CEST&quot;</code></pre>
 <p>Date/time data often comes as strings. Identify the order in which
 year, month, and day appear in your dates, then use the appropriate
 functions:</p>
@@ -464,7 +464,9 @@ flights_dt_na$n[flights_dt_na$dep_time &gt; ymd(&quot;2013-01-31&quot;) &amp; fl
 <p>Based on your plot, it seems that simple data imputation using the
 mean is not a great method to approximate what’s really going on in the
 flights data.</p>
-<p>## Create Time Series</p>
+</div>
+<div id="create-time-series" class="section level2">
+<h2>Create Time Series</h2>
 <p>Given a vector of numbers you can apply the ts() function to create a
 time series object. Such objects are of the <code>ts</code> class. They
 represent data that is at least approximately evenly spaced over

@@ -27,12 +27,11 @@ We introduce the **multivariate linear regression model**, which include omitted
 additional independens variables (X's). Hence, we can estimate the effect of one regressor
 (number of convenienve stores) while holding constant the other variables.
 
-Alternatively, if one is interested not in causal inference but in prediction, the 
-multiple regression model makes it possible to use multiple variables as regressors (predictors) to improve upon predictions made using a single regressor.
+The multiple regression model makes it possible to use multiple variables as regressors (predictors) to improve upon predictions made using a single regressor.
 
 
 The relation established between the X's and Y is a linear relationship. 
-It's important to note that in linear regression, the response variable must be numeric. If the response variable is binary (taking TRUE/FALSE values), logistic regression is conducted. multivariate linear or logistic regression models incorporate multiple explanatory variables.
+It's important to note that in linear regression, the response variable must be numeric. If the response variable is binary (taking TRUE/FALSE values), logistic regression is conducted. 
 
 Datasets usually contain many variables collected during a study. 
 
@@ -127,7 +126,12 @@ mdl_logit_mlt1 <- glm(deny ~ pirat + afam,
 summary(mdl_logit_mlt1)
 ```
 
-The coefficient on `afam` is positive and significantly different from zero at the \(0.01\%\) level. The interpretation is that, holding the \(P/I \ ratio\) constant, being black increases the probability of a mortgage application denial by about \(27.3\%\). This finding is compatible with racial discrimination. However, it might be distorted by omitted variable bias so discrimination could be a premature conclusion.
+```{r}
+round(exp(1.2728), 3)
+```
+
+
+The coefficient on `afam` is positive and significantly different from zero at the \(0.01\%\) level. The interpretation is that, holding the \(P/I \ ratio\) constant, being black increases over three times the probability of a mortgage application denial . This finding is compatible with racial discrimination. However, it might be distorted by omitted variable bias so discrimination could be a premature conclusion.
 
 
 ## Stepwise Regression
@@ -139,7 +143,6 @@ The stepwise regression consists of iteratively adding and removing predictors, 
 ```{r}
 # Initialize an empty model
 forward_model <- glm(deny ~ ., data = HMDA, family = binomial(link = "logit"))
-summary(forward_model)
 
 # Forward stepwise regression
 forward_model <- step(forward_model, direction = "forward", scope = formula(~ .))

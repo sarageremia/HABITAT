@@ -84,7 +84,7 @@ $$\mathbb{E}(price\_twd\_msq|n\_convenience, house\_age) = \beta_0 + \beta_{n\_c
 
 The coefficient on the middle aged and old houses are negative
 and significantly different from zero at the \(0.01\%\) level.
-The interpretation is that, holding the \(P/I \ ratio\) constant, if a house falls within the age range of 30 to 45 years, the price is expected to decrease by approximately 1.9 units compared to the reference category, holding all other variables constant.
+The interpretation is that, holding the # convenience stores constant, if a house falls within the age range of 30 to 45 years, the price is expected to decrease by approximately 1.9 units compared to the reference category, holding all other variables constant.
 
 ## Multivariate logistic regression model
 
